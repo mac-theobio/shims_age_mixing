@@ -19,8 +19,13 @@ include stuff.mk
 Sources += $(wildcard *.xlsx)
 Sources += $(wildcard *.R)
 
+### Emanuel's code (print statements added0
+
 shims1.Routput: 
 shims1.Rout: shims1.R
+
+
+### Reading and checking the data
 
 testread.Rout: SAMPLE_INCIDENCE_2017-03-18_05-08-18.xlsx testread.R
 
@@ -33,6 +38,12 @@ prev_samp.Rout: prev_samp.csv SAMPLE_PREVALENCE_2017-03-18_05-08-09.xlsx readsam
 	$(run-R)
 
 ######################################################################
+
+### Examine distributions of reported numbers of sex partners
+
+######################################################################
+
+
 
 wpush:
 	$(MAKE) sync
