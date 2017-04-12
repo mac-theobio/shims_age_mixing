@@ -4,7 +4,7 @@
 library(readxl)
 # Read the data 
 SAMPLE_PREVALENCE_2017_03_18_05_08_09 <- 
-  read_excel("~/Downloads/SAMPLE_PREVALENCE_2017-03-18_05-08-09.xlsx")
+  read_excel("SAMPLE_PREVALENCE_2017-03-18_05-08-09.xlsx")
 
 # coerce the Sexprt Num variable to type numeric
 SAMPLE_PREVALENCE_2017_03_18_05_08_09$`Sexprt Num` <- 
@@ -52,10 +52,12 @@ sexpartners <- matrix(c(f0,f1,f2,m0,m1,m2),ncol=3,byrow=TRUE)
 colnames(sexpartners) <- c("0 partners","1 partner",">=2 partners")
 rownames(sexpartners) <- c("Female", "male")
 
+print(sexpartners)
+
 # Read the data
 
 SAMPLE_INCIDENCE_2017_03_18_05_08_18 <- 
-  read_excel("~/Downloads/SAMPLE_INCIDENCE_2017-03-18_05-08-18.xlsx")
+  read_excel("SAMPLE_INCIDENCE_2017-03-18_05-08-18.xlsx")
 
 # coerce the Sexprt Num T2 variable to type numeric
 
@@ -104,3 +106,5 @@ m22 <- sum(SAMPLE_INCIDENCE_2017_03_18_05_08_18$`Sexprt Num T2` >= 2 &
 sexpartnersT2 <- matrix(c(f02,f12,f22,m02,m12,m22),ncol=3,byrow=TRUE)
 colnames(sexpartnersT2) <- c("0 partners","1 partner",">=2 partners")
 rownames(sexpartnersT2) <- c("Female", "male")
+
+print(sexpartnersT2)

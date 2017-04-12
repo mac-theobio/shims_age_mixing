@@ -2,7 +2,7 @@
 ### Hooks for the editor to set the default target
 current: target
 
-target pngtarget pdftarget vtarget acrtarget: notarget
+target pngtarget pdftarget vtarget acrtarget: inc_samp.Rout 
 
 ##################################################################
 
@@ -19,6 +19,13 @@ include stuff.mk
 Sources += $(wildcard *.xlsx)
 Sources += $(wildcard *.R)
 Sources += $(wildcard *.wrapR.r)
+
+shims1.Routput: 
+shims1.Rout: shims1.R
+
+testread.Rout: SAMPLE_INCIDENCE_2017-03-18_05-08-18.xlsx testread.R
+inc_samp.Rout: sample.csv SAMPLE_INCIDENCE_2017-03-18_05-08-18.xlsx readsamp.R
+	$(run-R)
 
 ######################################################################
 
