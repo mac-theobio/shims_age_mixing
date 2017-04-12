@@ -10,7 +10,3 @@ stopifnot(identical(typ$name, names(samp)))
 # Really read samp, using types from table
 samp <- read_excel(input_files[[2]], col_types=typ$type)
 
-head(samp)
-names(samp)
-summary(samp)
-
