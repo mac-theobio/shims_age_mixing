@@ -36,7 +36,7 @@ prev_samp.Rout: prev_samp.csv SAMPLE_PREVALENCE_2017-03-18_05-08-09.xlsx readsam
 
 wpush:
 	$(MAKE) sync
-	git add *.wrapR.r
+	git add -f *.wrapR.r
 	git commit -m "Pushing wrapR" files
 	git push
 
