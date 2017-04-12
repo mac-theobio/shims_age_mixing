@@ -2,7 +2,7 @@
 ### Hooks for the editor to set the default target
 current: target
 
-target pngtarget pdftarget vtarget acrtarget: inc_samp.Rout 
+target pngtarget pdftarget vtarget acrtarget: wpush 
 
 ##################################################################
 
@@ -34,10 +34,15 @@ prev_samp.Rout: prev_samp.csv SAMPLE_PREVALENCE_2017-03-18_05-08-09.xlsx readsam
 
 ######################################################################
 
-### Makestuff
+wpush:
+	$(MAKE) sync
+	git add *.wrapR.r
+	git commit -m "Pushing wrapR" files
+	git push
 
-## Change this name to download a new version of the makestuff directory
-# Makefile: start.makestuff
+######################################################################
+
+### Makestuff
 
 -include $(ms)/git.mk
 -include $(ms)/visual.mk
