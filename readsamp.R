@@ -10,3 +10,8 @@ stopifnot(identical(typ$name, names(samp)))
 # Really read samp, using types from table
 samp <- read_excel(input_files[[2]], col_types=typ$type)
 
+# Eliminate spaces from variable names (old style)
+names(samp) <- gsub(" ", "_", names(samp))
+
+summary(samp)
+head(samp)

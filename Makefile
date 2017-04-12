@@ -18,13 +18,18 @@ include stuff.mk
 
 Sources += $(wildcard *.xlsx)
 Sources += $(wildcard *.R)
-Sources += $(wildcard *.wrapR.r)
 
 shims1.Routput: 
 shims1.Rout: shims1.R
 
 testread.Rout: SAMPLE_INCIDENCE_2017-03-18_05-08-18.xlsx testread.R
-inc_samp.Rout: sample.csv SAMPLE_INCIDENCE_2017-03-18_05-08-18.xlsx readsamp.R
+
+Sources += inc_samp.csv
+inc_samp.Rout: inc_samp.csv SAMPLE_INCIDENCE_2017-03-18_05-08-18.xlsx readsamp.R
+	$(run-R)
+
+Sources += prev_samp.csv
+prev_samp.Rout: prev_samp.csv SAMPLE_PREVALENCE_2017-03-18_05-08-09.xlsx readsamp.R
 	$(run-R)
 
 ######################################################################
