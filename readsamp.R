@@ -7,5 +7,3 @@ samp <- read_excel(input_files[[1]])
 # Eliminate spaces from variable names (old style)
 names(samp) <- gsub(" ", "_", names(samp))
 
-summary(samp)
-head(samp)
