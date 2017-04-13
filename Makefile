@@ -2,7 +2,7 @@
 ### Hooks for the editor to set the default target
 current: target
 
-target pngtarget pdftarget vtarget acrtarget: prev_partner_hist.Rout 
+target pngtarget pdftarget vtarget acrtarget gptarget: prev_partner_hist.Rout 
 
 ##################################################################
 
@@ -43,13 +43,14 @@ prev_partner_hist.Rout: prev.Rout prev_partner_hist.R
 
 ### Issues
 
+Sources += nametest.csv
 nametest.Rout: nametest.csv nametest.R
 
 xntest.Rout: nametest.xlsx xntest.R
 
 ### Also, probably not going forward with _samp.csv, since read_excel behaved disappointingly
 ## Now I think the problem is that the xlsx file is also a mess; still not sure why we shouldn't get the same behaviour from numeric as as.numeric
-Sources += inc_samp.csv
+Sources += inc_samp.csv prev_samp.csv
 inc_samp.Rout: inc_samp.csv SAMPLE_INCIDENCE_2017-03-18_05-08-18.xlsx readsamp.R
 	$(run-R)
 prev_samp.Rout: prev_samp.csv SAMPLE_PREVALENCE_2017-03-18_05-08-09.xlsx readsamp.R

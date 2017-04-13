@@ -7,12 +7,12 @@ Urban, text
 REQ Erdt, date
 Gender, text
 Age, numeric
-Age Grp, blank
+Age Grp, text
 Education, text
 Marital, text
 Sex Age, numeric
 Sexprt Num, numeric
-Sexprt Cat, blank
+Sexprt Cat, text
 Preg, text
 Circum, text
 Hiv Testhistory, text
