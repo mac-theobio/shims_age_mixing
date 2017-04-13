@@ -1,6 +1,7 @@
 library(ggplot2)
+theme_set(theme_bw())
 
-print(data.frame(
-	samp$Sexprt_Num
-	, as.numeric( samp$Sexprt_Num)
-))
+print(ggplot(samp, aes(x=Sexprt_Num))
+	+ geom_histogram()
+	+ facet_wrap(~ Gender)
+)
