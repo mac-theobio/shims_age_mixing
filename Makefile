@@ -2,7 +2,7 @@
 ### Hooks for the editor to set the default target
 current: target
 
-target pngtarget pdftarget vtarget acrtarget: wpush 
+target pngtarget pdftarget vtarget acrtarget: prev_partner_hist.Rout 
 
 ##################################################################
 
@@ -36,6 +36,8 @@ inc_samp.Rout: inc_samp.csv SAMPLE_INCIDENCE_2017-03-18_05-08-18.xlsx readsamp.R
 Sources += prev_samp.csv
 prev_samp.Rout: prev_samp.csv SAMPLE_PREVALENCE_2017-03-18_05-08-09.xlsx readsamp.R
 	$(run-R)
+
+prev_partner_hist.Rout: prev_samp.Rout prev_partner_hist.R
 
 ######################################################################
 

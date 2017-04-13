@@ -2,6 +2,7 @@ library(readr)
 library(readxl)
 
 typ <- read_csv(input_files[[1]], trim_ws=TRUE)
+print(typ$name)
 
 # Pretend to read samp (check that names match)
 samp <- read_excel(input_files[[2]])
