@@ -19,7 +19,7 @@ include stuff.mk
 Sources += $(wildcard *.xlsx)
 Sources += $(wildcard *.R)
 
-### Emanuel's code (print statements added0
+### Emanuel's code (print statements added)
 
 shims1.Routput: 
 shims1.Rout: shims1.R
