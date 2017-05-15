@@ -77,3 +77,27 @@ model <- lme(Partner_age~Participant_age,
              method = "REML",
              weights = varPower(value = 0.5, form = ~Participant_age + 1),
              random = ~1|Uid)
+
+summary(model)
+
+# Extract slope = Beta-coefficent of the fixed effect from model
+slope <- model$coefficients$fixed[2]
+
+# Extract population intercepts = expected age of partner for a man starting a relationship at age 15
+intercept <- model$coefficients$fixed[1]
+
+# Extract power coefficient of variance function
+power <- (attributes(model$apVar)$Pars["varStruct.power"])
+power.lowerbound <- intervals(model)$varStruct[,1]
+power.upperbound <- intervals(model)$varStruct[,3]
+
+# Extract between-individual variance
+between.var <- VarCorr(model)[1] %>% as.numeric()
+
+# Extract residual variance = within-individual variance
+within.var <- VarCorr(model)[2] %>% as.numeric()
+
+
+
+
+
