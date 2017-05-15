@@ -2,6 +2,7 @@ library(readxl)
 library(data.table)
 library(ggplot2)
 library(dplyr)
+library(nlme)
 ##################################################################################################
 # User defined functions
 
@@ -18,7 +19,7 @@ Age_res_at_rel_onset <- function(currentage, currentdate, daterelstart){
 ##################################################################################################
 # Read the data and subset it
 
-Sample_Baseline <- read_excel("~/Desktop/SHIMS/SAMPLE_T1_2017-05-02_00-59-36.xlsx")
+Sample_Baseline <- read_excel("~/Desktop/SHIMS/shims_age_mixing/SAMPLE_T1_2017-05-02_00-59-36.xlsx")
 
 T1_agemix <- Sample_Baseline[,c("Uid","REQsex","Age REQ","REQ Erdt","RQp1rbmy","RQp1ftyy",
                                 "RQp2rbmy","RQp2ftyy","RQp3rbmy","RQp3ftyy")]
@@ -40,7 +41,7 @@ T1_agemix$Age_res_p3 <- Age_res_at_rel_onset(currentage = T1_agemix$`Age REQ`,
 ##################################################################################################
 # We want to tidy the data frame
 
-T1_agemixing <- T1_agemix[,c("REQsex","Age_res_p1","Age_res_p2","Age_res_p3",
+T1_agemixing <- T1_agemix[,c("Uid", "REQsex","Age_res_p1","Age_res_p2","Age_res_p3",
                              "RQp1ftyy","RQp2ftyy","RQp3ftyy")]
 
 setDT(T1_agemixing) #convert to a data.table for easy manipulation
@@ -60,3 +61,19 @@ print(ggplot(na.exclude(DT.Agemix), aes(x=Participant_age, y=as.numeric(Partner_
       + ylab("Partner Age")
       + ggtitle("Partner vs Participant age at onset of sexual relationship")
       )
+
+#################################################################################################
+# Fitting a linear mixed model
+# Remove all data from respondents younger than 15 years old
+# Subtract 15 from all respondent ages, so that “respondent.age.at.relationship.formation” is
+# coded 0 for a man who started a relationship at age 15 years old.
+
+DT.Agemix.men <- na.exclude(DT.Agemix[which(REQsex == "Male" & Participant_age >= 15),])
+DT.Agemix.men$Participant_age <- DT.Agemix.men$Participant_age - 15
+DT.Agemix.men$Partner_age <- as.numeric(DT.Agemix.men$Partner_age)
+
+model <- lme(Partner_age~Participant_age,
+             data = DT.Agemix.men,
+             method = "REML",
+             weights = varPower(value = 0.5, form = ~Participant_age + 1),
+             random = ~1|Uid)
