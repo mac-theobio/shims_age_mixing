@@ -1,43 +1,10 @@
-library(readxl)
 library(data.table)
 library(ggplot2)
 library(dplyr)
 library(nlme)
-##################################################################################################
-# User defined functions
 
-Rel_onset_date <- function(daterelstart){
-  paste(substr(daterelstart,1,3),substr(daterelstart,4,5),sep = "/") %>%
-    paste("01",sep = "/") %>%
-    as.Date("%b/%y/%d")
-}
-
-Age_res_at_rel_onset <- function(currentage, currentdate, daterelstart){
-  as.numeric(currentage) - as.numeric(difftime(currentdate,daterelstart,units = "weeks"))/52.25
-}
-
-##################################################################################################
-# Read the data and subset it
-
-Sample_Baseline <- read_excel("~/Desktop/SHIMS/shims_age_mixing/SAMPLE_T1_2017-05-02_00-59-36.xlsx")
-
-T1_agemix <- Sample_Baseline[,c("Uid","REQsex","Age REQ","REQ Erdt","RQp1rbmy","RQp1ftyy",
-                                "RQp2rbmy","RQp2ftyy","RQp3rbmy","RQp3ftyy")]
-
-##################################################################################################
-# create a variable for age of participant when he/she had sexual rel started with partner 1
-
-T1_agemix$Age_res_p1 <- Age_res_at_rel_onset(currentage = T1_agemix$`Age REQ`,
-                                             currentdate = T1_agemix$`REQ Erdt`,
-                                             daterelstart = Rel_onset_date(T1_agemix$RQp1rbmy))
-
-T1_agemix$Age_res_p2 <- Age_res_at_rel_onset(currentage = T1_agemix$`Age REQ`,
-                                             currentdate = T1_agemix$`REQ Erdt`,
-                                             daterelstart = Rel_onset_date(T1_agemix$RQp2rbmy))
-
-T1_agemix$Age_res_p3 <- Age_res_at_rel_onset(currentage = T1_agemix$`Age REQ`,
-                                             currentdate = T1_agemix$`REQ Erdt`,
-                                             daterelstart = Rel_onset_date(T1_agemix$RQp3rbmy))
+setwd("/home/emanuel/Desktop/SHIMS/shims_age_mixing")
+load("T1_agemix.Rdata")
 ##################################################################################################
 # We want to tidy the data frame
 
@@ -53,13 +20,13 @@ DT.Agemix = melt(T1_agemixing, measure = patterns("^Age_res","^RQp"),
 # Scatterplot of partner age vs participant age
 theme_set(theme_bw())
 
-print(ggplot(na.exclude(DT.Agemix), aes(x=Participant_age, y=as.numeric(Partner_age)))
+print(ggplot(na.exclude(DT.Agemix), aes(x=Participant_age, y=Partner_age))
       + geom_point()
       + facet_wrap(~REQsex)
       + coord_equal()
-      + xlab("Participant Age")
-      + ylab("Partner Age")
-      + ggtitle("Partner vs Participant age at onset of sexual relationship")
+      + xlab("")
+      + ylab("")
+      #+ ggtitle("Partner vs Participant age at onset of sexual relationship")
       )
 
 #################################################################################################
@@ -70,7 +37,6 @@ print(ggplot(na.exclude(DT.Agemix), aes(x=Participant_age, y=as.numeric(Partner_
 
 DT.Agemix.men <- na.exclude(DT.Agemix[which(REQsex == "Male" & Participant_age >= 15),])
 DT.Agemix.men$Participant_age <- DT.Agemix.men$Participant_age - 15
-DT.Agemix.men$Partner_age <- as.numeric(DT.Agemix.men$Partner_age)
 
 model <- lme(Partner_age~Participant_age,
              data = DT.Agemix.men,
@@ -96,6 +62,45 @@ between.var <- VarCorr(model)[1] %>% as.numeric()
 
 # Extract residual variance = within-individual variance
 within.var <- VarCorr(model)[2] %>% as.numeric()
+
+#####################################################################################################
+# visualizing output
+
+fixParam <- fixef(model)
+ranParam <- ranef(model)
+params <- ranParam[1]+fixParam[1]
+
+p <- ggplot(DT.Agemix.men,aes(Participant_age,Partner_age)) +
+      geom_point(size=3,color="black") +
+      xlab("") +
+      ylab("") +
+      scale_x_continuous(labels = function(x)x+15)
+
+subNum <- unique(DT.Agemix.men$Uid)
+
+for(i in 1:length(subNum)){
+  p <- p + geom_abline(intercept = params[i,1],slope = fixParam[2],color ="lightskyblue2")
+}
+
+p <- p + geom_abline(intercept = fixParam[1],slope = fixParam[2],color = "blue",size=1.5)
+print(p)
+
+
+
+##### confidence intervals for an individual
+age <- seq(15,50,0.1)
+within.sd <- sqrt(within.var * (1+(age-15))^power)
+
+
+expected.partner.age.person.i <- intercept + age * fixParam[2]
+
+UL95pred.interval <- expected.partner.age.person.i + 1.96 * within.sd
+LL95pred.interval <- expected.partner.age.person.i - 1.96 * within.sd
+
+
+
+
+
 
 
 
