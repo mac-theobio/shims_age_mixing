@@ -1,19 +1,44 @@
+library(data.table)
+library(ggplot2)
+library(dplyr)
+library(nlme)
+
 setwd("/home/emanuel/Desktop/SHIMS/shims_age_mixing")
+load("T1.agemix.Rdata")
+######################################################################################
+# We want to tidy the data frame by subsetting and converting it to long format
+# each row represents a relationship
 
-# load the cleaned data stored in a dataframe
-load("T1_agemix.Rdata")
+T1.reldata <- T1.agemix %>% transmute(Uid,
+                                      Gender,
+                                      Age.diff.p1,
+                                      Age.diff.p2,
+                                      Age.diff.p3,
+                                      Condom.freq.p1,
+                                      Condom.freq.p2,
+                                      Condom.freq.p3,
+                                      Sex.freq.p1,
+                                      Sex.freq.p2,
+                                      Sex.freq.p3,
+                                      Partner.type.p1,
+                                      Partner.type.p2,
+                                      Partner.type.p3,
+                                      Rel.dur.p1,
+                                      Rel.dur.p2,
+                                      Rel.dur.p3,
+                                      Money.gifts.p1,
+                                      Money.gifts.p2,
+                                      Money.gifts.p3)
 
-############################################################################################
-# computing age differences defined as the male partner's age minus the female partner's age
+setDT(T1.reldata) #convert to a data.table for easy manipulation
 
-T1_agemix$Age_diff_p1 <- ifelse(T1_agemix$REQsex == "male", 
-                                   T1_agemix$Age_res_p1-T1_agemix$RQp1ftyy,
-                                   T1_agemix$RQp1ftyy - T1_agemix$Age_res_p1)
-  
-T1_agemix$Age_diff_p2 <- ifelse(T1_agemix$REQsex == "male", 
-                                   T1_agemix$Age_res_p2-T1_agemix$RQp2ftyy,
-                                   T1_agemix$RQp2ftyy - T1_agemix$Age_res_p2)
+DT.reldata = T1.reldata %>% melt( measure = patterns("^Age.diff", "^Condom.freq", 
+                                                     "^Sex.freq","^Partner.type",
+                                                     "^Rel.dur", "^Money.gifts"),
+                                  value.name = c("Age.difference", "Condom.frequency",
+                                                 "Sex.frequency","Partner.type", 
+                                                 "Relationship.dur", "Money.gifts"),
+                                  variable.name = "Partner")
 
-T1_agemix$Age_diff_p3 <- ifelse(T1_agemix$REQsex == "male", 
-                                   T1_agemix$Age_res_p3-T1_agemix$RQp3ftyy,
-                                   T1_agemix$RQp3ftyy - T1_agemix$Age_res_p3)
+#####################################################################################
+# Removing respondents who did not report relationship 1,2,3
