@@ -1,7 +1,7 @@
 library(readxl)
 library(dplyr)
 
-setwd("/home/emanuel/Desktop/SHIMS/shims_age_mixing")
+setwd("/home/emanuel/Documents/SHIMS/shims_age_mixing")
 #####################################################################################
 # User defined functions
 
@@ -20,7 +20,7 @@ AgeResAtRelOnset <- function(currentage, currentdate, daterelstart){
 
 #####################################################################################
 # Read the data
-Sample.Baseline <- read_excel("~/Desktop/SHIMS/shims_age_mixing/SAMPLE_T1_2017-05-02_00-59-36.xlsx")
+Sample.Baseline <- read_excel("SAMPLE_T1_2017-05-02_00-59-36.xlsx")
 
 # Eliminate spaces from variable names (old style)
 names(Sample.Baseline) <- make.names(names(Sample.Baseline))

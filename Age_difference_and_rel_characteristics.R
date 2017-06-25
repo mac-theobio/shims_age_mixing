@@ -3,7 +3,7 @@ library(ggplot2)
 library(dplyr)
 library(nlme)
 
-setwd("/home/emanuel/Desktop/SHIMS/shims_age_mixing")
+setwd("/home/emanuel/Documents/SHIMS/shims_age_mixing")
 load("T1.agemix.Rdata")
 ######################################################################################
 # We want to tidy the data frame by subsetting and converting it to long format
@@ -42,3 +42,13 @@ DT.reldata = T1.reldata %>% melt( measure = patterns("^Age.diff", "^Condom.freq"
 
 #####################################################################################
 # Removing respondents who did not report relationship 1,2,3
+
+DT.reldata.clean <- DT.reldata[!(is.na(DT.reldata$Age.difference) &
+                                   is.na(DT.reldata$Sex.frequency) &
+                                   is.na(DT.reldata$Partner.type) &
+                                   is.na(DT.reldata$Relationship.dur) &
+                                   is.na(DT.reldata$Money.gifts))]
+
+#####################################################################################
+# Fitting the models
+

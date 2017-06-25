@@ -3,7 +3,7 @@ library(ggplot2)
 library(dplyr)
 library(nlme)
 
-setwd("/home/emanuel/Desktop/SHIMS/shims_age_mixing")
+setwd("/home/emanuel/Documents/SHIMS/shims_age_mixing")
 load("T1.agemix.Rdata")
 ##################################################################################################
 # We want to tidy the data frame by subsetting and converting it to long format
