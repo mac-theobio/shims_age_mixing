@@ -1,5 +1,6 @@
 library(readxl)
 library(dplyr)
+library(zoo)
 
 setwd("/home/emanuel/Documents/SHIMS/shims_age_mixing")
 #####################################################################################
@@ -25,11 +26,16 @@ Sample.Baseline <- read_excel("SAMPLE_T1_2017-05-02_00-59-36.xlsx")
 # Eliminate spaces from variable names (old style)
 names(Sample.Baseline) <- make.names(names(Sample.Baseline))
 
+# ordering levels
+freqlevels = c("always","sometimes","never")
+sexlevels = c("1","between 2-5","betweeen 6-10","more than 10")
+partlevels = c("husband/wife","regular partner","casual partner")
+
 # Subset the data as you change the variable names and data types
 T1.agemix <- Sample.Baseline %>% transmute(Uid = Uid,
                                            Gender = as.factor(REQsex),
                                            Age = Age.REQ,
-                                           EnrollmentDate = as.Date(REQ.Erdt),
+                                           EnrollmentDate = as.POSIXct(REQ.Erdt),
                                            Start.rel.date.p1 = RQp1rbmy,
                                            End.rel.date.p1 = RQp1remy,
                                            Partner.age.p1 = as.numeric(RQp1ftyy),
@@ -40,18 +46,19 @@ T1.agemix <- Sample.Baseline %>% transmute(Uid = Uid,
                                            End.rel.date.p3 = RQp3remy,
                                            Partner.age.p3 = as.numeric(RQp3ftyy),
                                            No.partners = as.numeric(RQtnp6m),
-                                           Condom.freq.p1 = as.ordered(RQp1hocu),
-                                           Condom.freq.p2 = as.ordered(RQp2hocu),
-                                           Condom.freq.p3 = as.ordered(RQp3hocu),
-                                           Sex.freq.p1 = as.ordered(RQp1hm6s),
-                                           Sex.freq.p2 = as.ordered(RQp2hm6s),
-                                           Sex.freq.p3 = as.ordered(RQp3hm6s),
-                                           Money.gifts.p1 = as.ordered(RQp1grm),
-                                           Money.gifts.p2 = as.ordered(RQp2grm),
-                                           Money.gifts.p3 = as.ordered(RQp3grm),
-                                           Partner.type.p1 = as.ordered(RQp1psr),
-                                           Partner.type.p2 = as.ordered(RQp2psr),
-                                           Partner.type.p3 = as.ordered(RQp3psr))
+                                           Condom.freq.p1 = ordered(RQp1hocu,levels = freqlevels),
+                                           Condom.freq.p2 = ordered(RQp2hocu,levels = freqlevels),
+                                           Condom.freq.p3 = ordered(RQp3hocu,levels = freqlevels),
+                                           Sex.freq.p1 = ordered(RQp1hm6s,levels = sexlevels),
+                                           Sex.freq.p2 = ordered(RQp2hm6s,levels = sexlevels),
+                                           Sex.freq.p3 = ordered(RQp3hm6s,levels = sexlevels),
+                                           Money.gifts.p1 = ordered(RQp1grm,levels = freqlevels),
+                                           Money.gifts.p2 = ordered(RQp2grm,levels = freqlevels),
+                                           Money.gifts.p3 = ordered(RQp3grm,levels = freqlevels),
+                                           Partner.type.p1 = ordered(RQp1psr,levels = partlevels),
+                                           Partner.type.p2 = ordered(RQp2psr,levels = partlevels),
+                                           Partner.type.p3 = ordered(RQp3psr,levels = partlevels)
+                                           )
 
 ######################################################################################
 # create a variable for age of participant when he/she had sexual rel started with 
@@ -70,17 +77,34 @@ T1.agemix$Age.res.p3 <- AgeResAtRelOnset(currentage = T1.agemix$Age,
                                          daterel = DateCleaning(T1.agemix$Start.rel.date.p3))
 
 ######################################################################################
-# create a variable for relationship duration [days]
+# create a variable for relationship duration [months]
 
-T1.agemix$Rel.dur.p1 <- as.numeric(difftime(DateCleaning(T1.agemix$End.rel.date.p1),
-                                            DateCleaning(T1.agemix$Start.rel.date.p1),
-                                            units = "days"))
-T1.agemix$Rel.dur.p2 <- as.numeric(difftime(DateCleaning(T1.agemix$End.rel.date.p2),
-                                            DateCleaning(T1.agemix$Start.rel.date.p2),
-                                            units = "days"))
-T1.agemix$Rel.dur.p3 <- as.numeric(difftime(DateCleaning(T1.agemix$End.rel.date.p3),
-                                            DateCleaning(T1.agemix$Start.rel.date.p3),
-                                            units = "days"))
+T1.agemix$Rel.dur.p1 <- as.numeric((as.yearmon(DateCleaning(T1.agemix$End.rel.date.p1))-
+                                      as.yearmon(DateCleaning(T1.agemix$Start.rel.date.p1)))*12)
+
+T1.agemix$Rel.dur.p2 <- as.numeric((as.yearmon(DateCleaning(T1.agemix$End.rel.date.p2))-
+                                      as.yearmon(DateCleaning(T1.agemix$Start.rel.date.p2)))*12)
+
+T1.agemix$Rel.dur.p3 <- as.numeric((as.yearmon(DateCleaning(T1.agemix$End.rel.date.p3))-
+                                      as.yearmon(DateCleaning(T1.agemix$Start.rel.date.p3)))*12)
+
+##################################################################################
+# An indicator was created to denote whether or not the relationship was 
+# ongoing at the time of the interview or ended. Those relationships that were 
+# ongoing had right-censored relationship durations
+
+T1.agemix$Ongoing.p1 <- as.factor(ifelse(format(T1.agemix$EnrollmentDate, "%Y-%m") == 
+                                 format(DateCleaning(T1.agemix$End.rel.date.p1), "%Y-%m"),
+                               1,0))
+
+T1.agemix$Ongoing.p2 <- as.factor(ifelse(format(T1.agemix$EnrollmentDate, "%Y-%m") == 
+                                 format(DateCleaning(T1.agemix$End.rel.date.p2), "%Y-%m"),
+                               1,0))
+
+T1.agemix$Ongoing.p3 <- as.factor(ifelse(format(T1.agemix$EnrollmentDate, "%Y-%m") == 
+                                 format(DateCleaning(T1.agemix$End.rel.date.p3), "%Y-%m"),
+                               1,0))
+
 ######################################################################################
 # computing age differences defined as the male partner's age minus the female 
 # partner's age
