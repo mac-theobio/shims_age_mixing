@@ -6,6 +6,7 @@ library(ordinal)    #for cumulative link mixed models
 library(splines)    #or splines in models
 library(survival)   #for cox ph model
 library(effects)    #to do effects plots
+library(cowplot)    #plot_grid
 #library(survminer)
 
 setwd("/home/emanuel/Documents/SHIMS/shims_age_mixing")
@@ -104,7 +105,6 @@ DT.reldata.men <- DT.reldata.men %>%
 
 Condmod.1 <- clmm(Condom.frequency ~ ns(Age.difference,df = 4) + (1|Uid),
                 data = DT.reldata.men,
-                #link = "logit",
                 Hess = TRUE,
                 nAGQ = 7)
 
@@ -116,7 +116,6 @@ summary(Condmod.1)
 
 Sexmod.1 <- clmm(Sex.frequency ~ ns(Age.difference,df = 4) + (1|Uid),
                 data = DT.reldata.men,
-                #link = "logit",
                 Hess = TRUE,
                 nAGQ = 7)
 
@@ -126,7 +125,6 @@ summary(Sexmod.1)
 
 Partmod.1 <- clmm(Partner.type ~ ns(Age.difference,df = 4) + (1|Uid),
                 data = DT.reldata.men,
-                #link = "logit",
                 Hess = TRUE,
                 nAGQ = 7)
 
@@ -136,7 +134,6 @@ summary(Partmod.1)
 
 Moneymod.1 <- clmm(Money.gifts ~ ns(Age.difference,df = 4) + (1|Uid),
                 data = DT.reldata.men,
-                #link = "logit",
                 Hess = TRUE,
                 nAGQ = 7)
 
@@ -175,7 +172,6 @@ Condmod.2 <- clmm(Condom.frequency ~ ns(Age.difference,df = 4) +
                     No.partners + 
                     (1|Uid),
                 data = DT.reldata.men,
-                link = "logit",
                 Hess = TRUE,
                 nAGQ = 7)
 
@@ -191,7 +187,6 @@ Sexmod.2 <- clmm(Sex.frequency ~ ns(Age.difference,df = 4) +
                    No.partners + 
                    (1|Uid),
                  data = DT.reldata.men,
-                 link = "logit",
                  Hess = TRUE,
                  nAGQ = 7)
 
@@ -205,7 +200,6 @@ Partmod.2 <- clmm(Partner.type ~ ns(Age.difference,df = 4) +
                     No.partners + 
                     (1|Uid),
                   data = DT.reldata.men,
-                  link = "logit",
                   Hess = TRUE,
                   nAGQ = 7)
 
@@ -219,7 +213,6 @@ Moneymod.2 <- clmm(Money.gifts ~ ns(Age.difference,df = 4) +
                      No.partners + 
                      (1|Uid),
                    data = DT.reldata.men,
-                   link = "logit",
                    Hess = TRUE,
                    nAGQ = 7)
 
@@ -242,11 +235,13 @@ Reldurmod.2 <- coxph(Surv(Relationship.dur, Ongoing.rel == 0) ~
 
 summary(Reldurmod.2)
 
-# ========================
-# Effects plots for models
-# ========================
+# ===================================
+# Effects plots for univariate models
+# ===================================
 
 # Effects plot for condom model
+theme_set(theme_bw())
+
 tidycond.1 <- Effect("Age.difference", Condmod.1, 
                     xlevels = list(Age.difference = 50)) %>%
   data.frame() %>%
@@ -257,19 +252,14 @@ tidycond.1 <- Effect("Age.difference", Condmod.1,
            ordered(levels = freqlevels))%>%
   spread(fit, value) 
 
-fig1a <- tidycond.1 %>%
+cond.1a <- tidycond.1 %>%
   ggplot(aes(x = Age.difference, y = prob, fill = cond)) +
   geom_area() +
   xlab("Age difference") +
   ylab("Probability") +
   scale_fill_brewer(name = "Condom use", 
                     palette = "Dark2",
-                    guide = guide_legend(reverse = TRUE)) +
-  #theme +
-  theme(legend.title = element_text(size = 8),
-        legend.text = element_text(size = 6))
-
-print(fig1a)
+                    guide = guide_legend(reverse = TRUE))
 
 # Effects plot for sex frequency model
 
@@ -279,26 +269,25 @@ tidysf.1 <- Effect("Age.difference", Sexmod.1,
   select(-matches("logit.")) %>%
   gather(var, value, - Age.difference) %>%
   separate(var, c("fit", "cond"), extra = "merge") %>%
+  mutate(cond = gsub("X", "", cond)) %>%
   mutate(cond = gsub("prob.", "", cond) %>%
-           ordered(levels = sexlevels))%>%
+           ordered(levels = c("1","between.2.5","between.6.10","more.than.10"))%>%
+           plyr::mapvalues(from = c("1","between.2.5","between.6.10","more.than.10"),
+                           to = sexlevels)) %>% 
   spread(fit, value) 
 
-fig2a <- tidysf.1 %>%
+sex.1a <- tidysf.1 %>%
   ggplot(aes(x = Age.difference, y = prob, fill = cond)) +
   geom_area() +
   xlab("Age difference") +
   ylab("Probability") +
   scale_fill_brewer(name = "Sex Frequency", 
                     palette = "Dark2",
-                    guide = guide_legend(reverse = TRUE)) +
-  #theme +
-  theme(legend.title = element_text(size = 8),
-        legend.text = element_text(size = 6))
-
-print(fig2a)
+                    guide = guide_legend(reverse = TRUE)) 
 
 
-# Effects plot for partner model
+# Effects plot for age difference only models
+
 tidypart.1 <- Effect("Age.difference", Partmod.1, 
                      xlevels = list(Age.difference = 50)) %>%
   data.frame() %>%
@@ -306,22 +295,20 @@ tidypart.1 <- Effect("Age.difference", Partmod.1,
   gather(var, value, - Age.difference) %>%
   separate(var, c("fit", "cond"), extra = "merge") %>%
   mutate(cond = gsub("prob.", "", cond) %>%
-           ordered(levels = partlevels))%>%
+           ordered(levels = c("husband.wife","regular.partner","casual.partner"))%>%
+           plyr::mapvalues(from = c("husband.wife","regular.partner","casual.partner"),
+                           to = partlevels)) %>% 
   spread(fit, value) 
 
-fig3a <- tidypart.1 %>%
+part.1a <- tidypart.1 %>%
   ggplot(aes(x = Age.difference, y = prob, fill = cond)) +
   geom_area() +
   xlab("Age difference") +
   ylab("Probability") +
   scale_fill_brewer(name = "Partner type", 
                     palette = "Dark2",
-                    guide = guide_legend(reverse = TRUE)) +
-  #theme +
-  theme(legend.title = element_text(size = 8),
-        legend.text = element_text(size = 6))
+                    guide = guide_legend(reverse = TRUE)) 
 
-print(fig3a)
 
 # Effects plot for money gifts model
 tidymon.1 <- Effect("Age.difference", Moneymod.1, 
@@ -334,16 +321,200 @@ tidymon.1 <- Effect("Age.difference", Moneymod.1,
            ordered(levels = freqlevels))%>%
   spread(fit, value) 
 
-fig4a <- tidymon.1 %>%
+mon.1a <- tidymon.1 %>%
   ggplot(aes(x = Age.difference, y = prob, fill = cond)) +
   geom_area() +
   xlab("Age difference") +
   ylab("Probability") +
   scale_fill_brewer(name = "Money/Gifts", 
                     palette = "Dark2",
-                    guide = guide_legend(reverse = TRUE)) +
-  #theme +
-  theme(legend.title = element_text(size = 8),
-        legend.text = element_text(size = 6))
+                    guide = guide_legend(reverse = TRUE)) 
 
-print(fig4a)
+plot_grid(cond.1a,
+          sex.1a,
+          part.1a,
+          mon.1a,
+          labels = c("a", "b", "c", "d"),
+          ncol = 2)
+
+# =====================================
+# Effects plots for multivariate models
+# =====================================
+
+# Effects plot for condom model
+theme_set(theme_bw())
+
+tidycond.2a <- Effect("Age.difference", Condmod.2, 
+                     xlevels = list(Age.difference = 50)) %>%
+  data.frame() %>%
+  select(-matches("logit.")) %>%
+  gather(var, value, - Age.difference) %>%
+  separate(var, c("fit", "cond"), extra = "merge") %>%
+  mutate(cond = gsub("prob.", "", cond) %>%
+           ordered(levels = freqlevels))%>%
+  spread(fit, value) 
+
+cond.2a <- tidycond.2a %>%
+  ggplot(aes(x = Age.difference, y = prob, fill = cond)) +
+  geom_area() +
+  xlab("Age difference") +
+  ylab("Probability") +
+  scale_fill_brewer(name = "Condom use", 
+                    palette = "Dark2",
+                    guide = guide_legend(reverse = TRUE))
+
+tidycond.2b <- Effect("Age.participant", Condmod.2, 
+                      xlevels = list(Age.participant = 40)) %>%
+  data.frame() %>%
+  select(-matches("logit.")) %>%
+  gather(var, value, - Age.participant) %>%
+  separate(var, c("fit", "cond"), extra = "merge") %>%
+  mutate(cond = gsub("prob.", "", cond) %>%
+           ordered(levels = freqlevels))%>%
+  spread(fit, value) 
+
+cond.2b <- tidycond.2b %>%
+  ggplot(aes(x = Age.participant, y = prob, fill = cond)) +
+  geom_area() +
+  xlab("Age") +
+  ylab("Probability") +
+  scale_fill_brewer(name = "Condom use", 
+                    palette = "Dark2",
+                    guide = guide_legend(reverse = TRUE))
+
+plot_grid(cond.2a,cond.2b)
+
+# sex frequency multivariate model
+tidysf.2a <- Effect("Age.difference", Sexmod.2, 
+                   xlevels = list(Age.difference = 50)) %>%
+  data.frame() %>%
+  select(-matches("logit.")) %>%
+  gather(var, value, - Age.difference) %>%
+  separate(var, c("fit", "cond"), extra = "merge") %>%
+  mutate(cond = gsub("X", "", cond)) %>%
+  mutate(cond = gsub("prob.", "", cond) %>%
+           ordered(levels = c("1","between.2.5","between.6.10","more.than.10"))%>%
+           plyr::mapvalues(from = c("1","between.2.5","between.6.10","more.than.10"),
+                           to = sexlevels)) %>% 
+  spread(fit, value) 
+
+sex.2a <- tidysf.2a %>%
+  ggplot(aes(x = Age.difference, y = prob, fill = cond)) +
+  geom_area() +
+  xlab("Age difference") +
+  ylab("Probability") +
+  scale_fill_brewer(name = "Sex Frequency", 
+                    palette = "Dark2",
+                    guide = guide_legend(reverse = TRUE)) 
+
+tidysf.2b <- Effect("Age.participant", Sexmod.2, 
+                      xlevels = list(Age.participant = 40)) %>%
+  data.frame() %>%
+  select(-matches("logit.")) %>%
+  gather(var, value, - Age.participant) %>%
+  separate(var, c("fit", "cond"), extra = "merge") %>%
+  mutate(cond = gsub("X", "", cond)) %>%
+  mutate(cond = gsub("prob.", "", cond) %>%
+           ordered(levels = c("1","between.2.5","between.6.10","more.than.10"))%>%
+           plyr::mapvalues(from = c("1","between.2.5","between.6.10","more.than.10"),
+                           to = sexlevels)) %>% 
+  spread(fit, value) 
+
+sex.2b <- tidysf.2b %>%
+  ggplot(aes(x = Age.participant, y = prob, fill = cond)) +
+  geom_area() +
+  xlab("Age") +
+  ylab("Probability") +
+  scale_fill_brewer(name = "Sex Frequency", 
+                    palette = "Dark2",
+                    guide = guide_legend(reverse = TRUE))
+
+plot_grid(sex.2a,sex.2b)
+
+# partner type multivariate model
+
+tidypart.2a <- Effect("Age.difference", Partmod.2, 
+                     xlevels = list(Age.difference = 50)) %>%
+  data.frame() %>%
+  select(-matches("logit.")) %>%
+  gather(var, value, - Age.difference) %>%
+  separate(var, c("fit", "cond"), extra = "merge") %>%
+  mutate(cond = gsub("prob.", "", cond) %>%
+           ordered(levels = c("husband.wife","regular.partner","casual.partner"))%>%
+           plyr::mapvalues(from = c("husband.wife","regular.partner","casual.partner"),
+                           to = partlevels)) %>% 
+  spread(fit, value) 
+
+part.2a <- tidypart.2a %>%
+  ggplot(aes(x = Age.difference, y = prob, fill = cond)) +
+  geom_area() +
+  xlab("Age difference") +
+  ylab("Probability") +
+  scale_fill_brewer(name = "Partner type", 
+                    palette = "Dark2",
+                    guide = guide_legend(reverse = TRUE)) 
+
+tidypart.2b <- Effect("Age.participant", Partmod.2, 
+                    xlevels = list(Age.participant = 40)) %>%
+  data.frame() %>%
+  select(-matches("logit.")) %>%
+  gather(var, value, - Age.participant) %>%
+  separate(var, c("fit", "cond"), extra = "merge") %>%
+  mutate(cond = gsub("prob.", "", cond) %>%
+           ordered(levels = c("husband.wife","regular.partner","casual.partner"))%>%
+           plyr::mapvalues(from = c("husband.wife","regular.partner","casual.partner"),
+                           to = partlevels)) %>% 
+  spread(fit, value) 
+
+part.2b <- tidypart.2b %>%
+  ggplot(aes(x = Age.participant, y = prob, fill = cond)) +
+  geom_area() +
+  xlab("Age") +
+  ylab("Probability") +
+  scale_fill_brewer(name = "Partner type", 
+                    palette = "Dark2",
+                    guide = guide_legend(reverse = TRUE))
+
+plot_grid(part.2a,part.2b)
+
+# money gifts effects in multivariate model
+tidymon.2a <- Effect("Age.difference", Moneymod.2, 
+                    xlevels = list(Age.difference = 50)) %>%
+  data.frame() %>%
+  select(-matches("logit.")) %>%
+  gather(var, value, - Age.difference) %>%
+  separate(var, c("fit", "cond"), extra = "merge") %>%
+  mutate(cond = gsub("prob.", "", cond) %>%
+           ordered(levels = freqlevels))%>%
+  spread(fit, value) 
+
+mon.2a <- tidymon.2a %>%
+  ggplot(aes(x = Age.difference, y = prob, fill = cond)) +
+  geom_area() +
+  xlab("Age difference") +
+  ylab("Probability") +
+  scale_fill_brewer(name = "Money/gifts", 
+                    palette = "Dark2",
+                    guide = guide_legend(reverse = TRUE)) 
+
+
+tidymon.2b <- Effect("Age.participant", Moneymod.2, 
+                      xlevels = list(Age.participant = 40)) %>%
+  data.frame() %>%
+  select(-matches("logit.")) %>%
+  gather(var, value, - Age.participant) %>%
+  separate(var, c("fit", "cond"), extra = "merge") %>%
+  mutate(cond = gsub("prob.", "", cond) %>%
+           ordered(levels = freqlevels))%>%
+  spread(fit, value) 
+
+mon.2b <- tidymon.2b %>%
+  ggplot(aes(x = Age.participant, y = prob, fill = cond)) +
+  geom_area() +
+  xlab("Age") +
+  ylab("Probability") +
+  scale_fill_brewer(name = "Money/gifts", 
+                    palette = "Dark2",
+                    guide = guide_legend(reverse = TRUE))
+
+plot_grid(mon.2a,mon.2b)
