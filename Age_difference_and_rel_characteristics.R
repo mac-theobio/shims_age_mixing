@@ -258,8 +258,7 @@ cond.1a <- tidycond.1 %>%
   xlab("Age difference") +
   ylab("Probability") +
   scale_fill_brewer(name = "Condom use", 
-                    palette = "Dark2",
-                    guide = guide_legend(reverse = TRUE))
+                    palette = "Dark2")
 
 # Effects plot for sex frequency model
 
@@ -282,8 +281,7 @@ sex.1a <- tidysf.1 %>%
   xlab("Age difference") +
   ylab("Probability") +
   scale_fill_brewer(name = "Sex Frequency", 
-                    palette = "Dark2",
-                    guide = guide_legend(reverse = TRUE)) 
+                    palette = "Dark2") 
 
 
 # Effects plot for age difference only models
@@ -306,8 +304,7 @@ part.1a <- tidypart.1 %>%
   xlab("Age difference") +
   ylab("Probability") +
   scale_fill_brewer(name = "Partner type", 
-                    palette = "Dark2",
-                    guide = guide_legend(reverse = TRUE)) 
+                    palette = "Dark2") 
 
 
 # Effects plot for money gifts model
@@ -327,8 +324,7 @@ mon.1a <- tidymon.1 %>%
   xlab("Age difference") +
   ylab("Probability") +
   scale_fill_brewer(name = "Money/Gifts", 
-                    palette = "Dark2",
-                    guide = guide_legend(reverse = TRUE)) 
+                    palette = "Dark2") 
 
 plot_grid(cond.1a,
           sex.1a,
@@ -360,8 +356,7 @@ cond.2a <- tidycond.2a %>%
   xlab("Age difference") +
   ylab("Probability") +
   scale_fill_brewer(name = "Condom use", 
-                    palette = "Dark2",
-                    guide = guide_legend(reverse = TRUE))
+                    palette = "Dark2")
 
 tidycond.2b <- Effect("Age.participant", Condmod.2, 
                       xlevels = list(Age.participant = 40)) %>%
@@ -379,8 +374,7 @@ cond.2b <- tidycond.2b %>%
   xlab("Age") +
   ylab("Probability") +
   scale_fill_brewer(name = "Condom use", 
-                    palette = "Dark2",
-                    guide = guide_legend(reverse = TRUE))
+                    palette = "Dark2")
 
 plot_grid(cond.2a,cond.2b)
 
@@ -404,8 +398,7 @@ sex.2a <- tidysf.2a %>%
   xlab("Age difference") +
   ylab("Probability") +
   scale_fill_brewer(name = "Sex Frequency", 
-                    palette = "Dark2",
-                    guide = guide_legend(reverse = TRUE)) 
+                    palette = "Dark2") 
 
 tidysf.2b <- Effect("Age.participant", Sexmod.2, 
                       xlevels = list(Age.participant = 40)) %>%
@@ -426,8 +419,7 @@ sex.2b <- tidysf.2b %>%
   xlab("Age") +
   ylab("Probability") +
   scale_fill_brewer(name = "Sex Frequency", 
-                    palette = "Dark2",
-                    guide = guide_legend(reverse = TRUE))
+                    palette = "Dark2")
 
 plot_grid(sex.2a,sex.2b)
 
@@ -451,8 +443,7 @@ part.2a <- tidypart.2a %>%
   xlab("Age difference") +
   ylab("Probability") +
   scale_fill_brewer(name = "Partner type", 
-                    palette = "Dark2",
-                    guide = guide_legend(reverse = TRUE)) 
+                    palette = "Dark2") 
 
 tidypart.2b <- Effect("Age.participant", Partmod.2, 
                     xlevels = list(Age.participant = 40)) %>%
@@ -472,8 +463,7 @@ part.2b <- tidypart.2b %>%
   xlab("Age") +
   ylab("Probability") +
   scale_fill_brewer(name = "Partner type", 
-                    palette = "Dark2",
-                    guide = guide_legend(reverse = TRUE))
+                    palette = "Dark2")
 
 plot_grid(part.2a,part.2b)
 
@@ -494,8 +484,7 @@ mon.2a <- tidymon.2a %>%
   xlab("Age difference") +
   ylab("Probability") +
   scale_fill_brewer(name = "Money/gifts", 
-                    palette = "Dark2",
-                    guide = guide_legend(reverse = TRUE)) 
+                    palette = "Dark2") 
 
 
 tidymon.2b <- Effect("Age.participant", Moneymod.2, 
@@ -514,7 +503,6 @@ mon.2b <- tidymon.2b %>%
   xlab("Age") +
   ylab("Probability") +
   scale_fill_brewer(name = "Money/gifts", 
-                    palette = "Dark2",
-                    guide = guide_legend(reverse = TRUE))
+                    palette = "Dark2")
 
 plot_grid(mon.2a,mon.2b)
