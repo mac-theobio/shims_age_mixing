@@ -2,23 +2,8 @@ library(readxl)
 library(dplyr)
 library(zoo)
 
-setwd("/home/emanuel/Documents/SHIMS/shims_age_mixing")
-#####################################################################################
-# User defined functions
-
-DateCleaning <- function(daterel){
-  paste(substr(daterel,1,3),substr(daterel,4,5),sep = "/") %>%
-    paste("01",sep = "/") %>%
-    as.Date("%b/%y/%d")
-}
-
-AgeResAtRelOnset <- function(currentage, currentdate, daterelstart){
-  as.numeric(currentage) - as.numeric(difftime(currentdate,
-                                               daterelstart,
-                                               units = "weeks")
-                                      )/52.25
-}
-
+setwd("/Users/user/Documents/shims_age_mixing")
+source("Functions_for_SHIMS_study.R")
 #####################################################################################
 # Read the data
 Sample.Baseline <- read_excel("SAMPLE_T1_2017-05-02_00-59-36.xlsx")
@@ -123,3 +108,4 @@ T1.agemix$Age.diff.p3 <- ifelse(T1.agemix$Gender == "Male",
 
 # Save the dataframe
 save(T1.agemix, file = "T1.agemix.Rdata")
+

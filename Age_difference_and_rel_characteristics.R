@@ -1,15 +1,15 @@
 library(data.table)
-library(ggplot2)
-library(dplyr)
-library(tidyr)
+library(tidyverse)
 library(ordinal)    #for cumulative link mixed models
 library(splines)    #or splines in models
 library(survival)   #for cox ph model
 library(effects)    #to do effects plots
 library(cowplot)    #plot_grid
+library(dotwhisker) #make dot whisker plots
 #library(survminer)
 
-setwd("/home/emanuel/Documents/SHIMS/shims_age_mixing")
+setwd("/Users/user/Documents/shims_age_mixing")
+source("Functions_for_SHIMS_study.R")
 load("T1.agemix.Rdata")
 
 # ===================
@@ -98,10 +98,6 @@ DT.reldata.men <- DT.reldata.men %>%
 
 # (a) Effect of age difference on condom frequency with participant as random
 # effect
-# df <- model.frame(Condom.frequency ~ Age.difference + Uid,
-#                   data = DT.reldata.men,
-#                   na.action = na.exclude, 
-#                   drop.unused.levels = TRUE)
 
 Condmod.1 <- clmm(Condom.frequency ~ ns(Age.difference,df = 4) + (1|Uid),
                 data = DT.reldata.men,
@@ -109,7 +105,6 @@ Condmod.1 <- clmm(Condom.frequency ~ ns(Age.difference,df = 4) + (1|Uid),
                 nAGQ = 7)
 
 summary(Condmod.1)
-
 
 
 # (b) Effect of age difference on sex frequency with participant as random effect
@@ -144,8 +139,6 @@ summary(Moneymod.1)
 
 #-fit the cox model
 # censoring status, 1=censored, 0=relationship ended
-# DT.reldata.clean$Surv.obj <- with(DT.reldata.clean,
-#                                   Surv(Relationship.dur, Ongoing.rel == 0))
 
 Reldurmod.1 <- coxph(Surv(Relationship.dur, Ongoing.rel == 0) ~ 
                        ns(Age.difference,df = 4),
@@ -159,12 +152,6 @@ summary(Reldurmod.1)
 
 # (a) Effect of age difference on condom frequency with participant as random 
 # effect
-# df <- model.frame(Condom.frequency ~ 
-#                     Age.difference + Age.participant + No.partners + Uid,
-#                   data = DT.reldata.men,
-#                   na.action = na.exclude, 
-#                   drop.unused.levels = TRUE)
-
 
 Condmod.2 <- clmm(Condom.frequency ~ ns(Age.difference,df = 4) + 
                     ns(Age.participant,df = 4) +
@@ -176,7 +163,6 @@ Condmod.2 <- clmm(Condom.frequency ~ ns(Age.difference,df = 4) +
                 nAGQ = 7)
 
 summary(Condmod.2)
-
 
 
 # (b) Effect of age difference on sex frequency with participant as random effect
@@ -223,8 +209,6 @@ summary(Moneymod.2)
 
   #-fit the cox model
   # censoring status, 1=censored, 0=relationship ended
-# DT.reldata.clean$Surv.obj <- with(DT.reldata.clean,
-#                                   Surv(Relationship.dur, Ongoing.rel == 0))
 
 Reldurmod.2 <- coxph(Surv(Relationship.dur, Ongoing.rel == 0) ~ 
                        ns(Age.difference,df = 4) + 
@@ -506,3 +490,28 @@ mon.2b <- tidymon.2b %>%
                     palette = "Dark2")
 
 plot_grid(mon.2a,mon.2b)
+
+#==========================================
+# Tidy dataframes for the non spline terms
+# turns out not to be informative since we only have one non spline term in our models.
+#==========================================
+
+tidycond2 <- TidyCLMM(Condmod.2) %>% 
+  filter(!grepl('ns', term)) 
+
+tidysex2 <- TidyCLMM(Sexmod.2) %>%  
+  filter(!grepl('ns', term))
+
+tidypart2 <- TidyCLMM(Partmod.2) %>%  
+  filter(!grepl('ns', term))
+
+tidymon2 <- TidyCLMM(Moneymod.2) %>%  
+  filter(!grepl('ns', term))
+
+tidydur2 <- TidyCLMM(Reldurmod.2) %>%  
+  filter(!grepl('ns', term))
+
+
+#==========================================
+# Predicted effect of age difference on the dependent variables
+#==========================================
