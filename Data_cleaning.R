@@ -13,7 +13,7 @@ names(Sample.Baseline) <- make.names(names(Sample.Baseline))
 
 # ordering levels
 freqlevels = c("always","sometimes","never")
-sexlevels = c("1","between 2-5","betweeen 6-10","more than 10")
+sexlevels = c("1","between 2-5","between 6-10","more than 10")
 partlevels = c("husband/wife","regular partner","casual partner")
 
 # Subset the data as you change the variable names and data types
