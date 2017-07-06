@@ -1,18 +1,15 @@
 library(data.table)
 library(tidyverse)
-# library(dplyr)
-# library(tidyr)
-# library(tibble)
-# library(ggplot2)
 library(ordinal)    #for cumulative link mixed models
 library(splines)    #or splines in models
 library(survival)   #for cox ph model
 library(effects)    #to do effects plots
 library(cowplot)    #plot_grid
 library(dotwhisker) #make dot whisker plots
+library(broom)      #convert objects into tidy data frame: tidy()
 #library(survminer)
 
-setwd("/Users/user/Documents/shims_age_mixing")
+setwd("/Users/emanuel/Documents/shims_age_mixing")
 source("Functions_for_SHIMS_study.R")
 load("T1.agemix.Rdata")
 
@@ -100,6 +97,7 @@ DT.reldata.men <- DT.reldata.men %>%
 # Fitting the models 
 # ===========================
 # Part I: CONDOM FREQUENCY
+
 # (a) Effect of age difference on condom frequency with participant as random
 # effect
 # (b) Effect of age difference, age of participant and number of partners on 
@@ -124,6 +122,7 @@ Condmod.2 <- clmm(Condom.frequency ~ ns(Age.difference,df = 4) +
 summary(Condmod.2)
 
 # Part II: SEX FREQUENCY
+
 # (a) Effect of age difference on sex frequency with participant as random effect
 # (b) Effect of age difference, age of participant and number of partners on sex 
 # frequency with participant as random effect
@@ -147,6 +146,7 @@ Sexmod.2 <- clmm(Sex.frequency ~ ns(Age.difference,df = 4) +
 summary(Sexmod.2)
 
 # Part III: PARTNER TYPE
+
 # (a) Effect of age difference on partner type with participant as random effect
 # (b) Effect of age difference, age of participant and number of partners on partner type
 # with participant as random effect
@@ -170,6 +170,7 @@ Partmod.2 <- clmm(Partner.type ~ ns(Age.difference,df = 4) +
 summary(Partmod.2)
 
 # Part IV: MONEY/GIFTS
+
 # (a) Effect of age difference on money/gifts with participant as random effect
 # (b) Effect of age difference, age of participant and number of partners on money/gifts
 # with participant as random effect
@@ -193,6 +194,7 @@ Moneymod.2 <- clmm(Money.gifts ~ ns(Age.difference,df = 4) +
 summary(Moneymod.2)
 
 # Part V: RELATIONSHIP DURATION
+
 # (a) Effect of age difference on relationship duration with participant as random effect
 # (b) Effect of age difference, age of participant and number of partners on relationship 
 # duration with participant as random effect
@@ -424,12 +426,10 @@ tidymon.2b <- Effect("Age.participant", Moneymod.2,
 #(c) Predicted effects on money/gifts
 
 #(i) for univariate
-
 tidymon.3 <- OrdPred(Moneymod.1, "Age.difference", DT.reldata.men)
 
 #(ii) for multivarite
 # Age difference
-
 tidymon.3a <- OrdPred(Moneymod.2, "Age.difference", DT.reldata.men)
 
 # Age of participat
@@ -437,12 +437,37 @@ tidymon.3b <- OrdPred(Moneymod.2, "Age.participant", DT.reldata.men)
 
 # Part V: RELATIONSHIP DURATION
 
-# =========================================
+# Obtain survival times at different percentiles of agedif
+percentiles <- quantile(DT.reldata.men$Age.difference, prob = c(.025, .25, .5, .75, .975))
+
+# compute expected survival and tidy the data frame
+
+tidyreldur.1 <- survexp(~ Age.difference, 
+                       data = DT.reldata.men, 
+                       ratetable = Reldurmod.1) %>%
+  tidy() %>%
+  #select(-matches("n.")) %>%
+  gather(var, value, -time) %>%
+  mutate(var = gsub("surv.Age.difference\\.", "", var),
+         Age.difference = gsub("\\.", "-", var) %>%
+           as.numeric()) %>%
+  select(-var) %>%
+  filter(agedif %in% percentiles) %>%
+  mutate(agedif = factor(agedif, 
+                         levels = percentiles,
+                         labels = c("1yrs older", 
+                                    "1yr younger", 
+                                    "3yrs younger",
+                                    "4yrs younger",
+                                    "10yrs younger")))
+
+# ==========================================
 # Effects plots, predictions from the models
-# =========================================
+# ==========================================
 theme_set(theme_bw())
 
 # Part I: CONDOM FREQUENCY
+
 # (a) Univariate
 
 cond.1a <- tidycond.1 %>%
@@ -511,6 +536,7 @@ plot_grid(cond.2a,
           ncol = 2)
 
 # Part II: SEX FREQUENCY
+
 # Effects plot for sex frequency model
 
 # univariate
@@ -535,6 +561,7 @@ plot_grid(sex.1a,
           sex.pred.3,
           labels = c("a","b"),
           ncol = 1)
+
 # multivariate
 
 sex.2a <- tidysf.2a %>%
@@ -579,6 +606,7 @@ plot_grid(sex.2a,
           ncol = 2)
 
 # Part III: PARTNER TYPE
+
 # Effects plot for partner type models
 
 #univariate
@@ -647,6 +675,7 @@ plot_grid(part.2a,
           ncol = 2)
 
 # Part IV: MONEY/GIFTS
+
 # Effects plot for money gifts model
 
 # univariate

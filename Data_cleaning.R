@@ -2,7 +2,7 @@ library(readxl)
 library(dplyr)
 library(zoo)
 
-setwd("/Users/user/Documents/shims_age_mixing")
+setwd("/Users/emanuel/Documents/shims_age_mixing")
 source("Functions_for_SHIMS_study.R")
 #####################################################################################
 # Read the data
