@@ -24,8 +24,8 @@ library(nlme)       #fitting non linear mixed effects models
 #install_github("baptiste/egg")
 library(egg)
 
-setwd("C:/Users/Emanuel/Desktop/shims_age_mixing")
-#setwd("/Users/emanuel/Dropbox/shims_age_mixing-master/")
+#setwd("C:/Users/Emanuel/Desktop/shims_age_mixing")
+setwd("/Users/emanuel/Documents/shims_age_mixing")
 source("Functions_for_SHIMS_study.R")
 load("T1.agemix.Rdata")
 
