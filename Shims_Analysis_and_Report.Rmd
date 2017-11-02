@@ -1,0 +1,1119 @@
+---
+title: "Consolidated Report"
+author: "Emanuel Muema Dominic"
+date: "7/12/2017"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(data.table)
+library(tidyverse)
+library(ordinal)    #for cumulative link mixed models
+library(splines)    #or splines in models
+library(survival)   #for cox ph model
+library(effects)    #to do effects plots
+library(cowplot)    #plot_grid
+library(dotwhisker) #make dot whisker plots
+library(broom)      #convert objects into tidy data frame: tidy()
+library(visreg)     #getting "contrast" hazard ratios
+library(nlme)       #fitting non linear mixed effects models
+#install_github("baptiste/egg")
+library(egg)
+
+setwd("C:/Users/Emanuel/Desktop/shims_age_mixing")
+#setwd("/Users/emanuel/Documents/shims_age_mixing/")
+source("Functions_for_SHIMS_study.R")
+load("T1.agemix.Rdata")
+
+```
+
+```{r TIDY_DATAFRAME, echo=FALSE}
+# ===================
+# Tidy the dataframe 
+# ===================
+# tidy the data frame for age mixing analysis
+T1.agemixing <- T1.agemix %>% transmute(Uid,
+                                        Gender,
+                                        Age.res.p1,
+                                        Age.res.p2,
+                                        Age.res.p3,
+                                        Partner.age.p1,
+                                        Partner.age.p2,
+                                        Partner.age.p3)
+
+setDT(T1.agemixing) #convert to a data.table for easy manipulation
+
+DT.Agemix = T1.agemixing %>% melt( measure = patterns("^Age.res", "^Partner.age"),
+                                   value.name = c("Age.participant", "Partner.age"),
+                                   variable.name = "Partner")
+
+DT.Agemix.men <- na.exclude(DT.Agemix[which(Gender == "Male" & Age.participant >= 15),])
+DT.Agemix.men$Age.participant <- DT.Agemix.men$Age.participant - 15
+
+# We want to tidy the data frame by subsetting and converting it 
+# to long format so that each row represents a relationship.
+
+T1.reldata <- T1.agemix %>% transmute(Uid,
+                                      Gender,
+                                      No.partners,
+                                      Age.res.p1,
+                                      Age.res.p2,
+                                      Age.res.p3,
+                                      Age.diff.p1,
+                                      Age.diff.p2,
+                                      Age.diff.p3,
+                                      Condom.freq.p1,
+                                      Condom.freq.p2,
+                                      Condom.freq.p3,
+                                      Sex.freq.p1,
+                                      Sex.freq.p2,
+                                      Sex.freq.p3,
+                                      Partner.type.p1,
+                                      Partner.type.p2,
+                                      Partner.type.p3,
+                                      Rel.dur.p1,
+                                      Rel.dur.p2,
+                                      Rel.dur.p3,
+                                      Rel.ended.p1,
+                                      Rel.ended.p2,
+                                      Rel.ended.p3,
+                                      Money.gifts.p1,
+                                      Money.gifts.p2,
+                                      Money.gifts.p3)
+# code REF as NA
+T1.reldata[T1.reldata == "REF"] <- NA
+
+setDT(T1.reldata) #convert to a data.table for easy manipulation
+
+DT.reldata <-  T1.reldata %>% 
+  melt(measure = patterns("^Age.res", "^Age.diff",
+                          "^Condom.freq", "^Sex.freq",
+                          "^Partner.type", "^Rel.dur",
+                          "^Rel.ended", "^Money.gifts"), 
+       value.name = c("Age.participant", "Age.difference",
+                      "Condom.frequency", "Sex.frequency",
+                      "Partner.type", "Relationship.dur",
+                      "Rel.ended", "Money.gifts"),  
+      variable.name = "Partner"
+        )
+
+
+# ===========================================================
+# Removing respondents who did not report relationship 1,2,3
+# ===========================================================
+
+DT.rel.men <- na.exclude(subset(DT.reldata, Gender == "Male" & Age.participant >= 15))
+#DT.rel.men <- na.exclude(subset(DT.reldata, Gender == "Male"))
+
+
+# ordering levels
+freqlevels = c("never","sometimes","always")
+sexlevels = c("1","between 2-5","between 6-10","more than 10")
+partlevels = c("husband/wife","regular partner","casual partner")
+
+DT.reldata.men <- DT.rel.men %>% 
+  transmute(Uid = as.factor(Uid),
+            #Gender,
+            No.partners,
+            Partner,
+            Age.participant,
+            Age.difference,
+            Relationship.dur,
+            Rel.ended = as.factor(Rel.ended),
+            Condom.frequency = ordered(Condom.frequency, levels = freqlevels),
+            Sex.frequency = ordered(Sex.frequency, levels = sexlevels),
+            Partner.type = ordered(Partner.type, levels = partlevels),
+            Money.gifts = ordered(Money.gifts, levels = freqlevels)
+  )
+  
+#head(DT.reldata.men)
+```
+
+## Background
+
+Age mixing in sexual relationships refers to how men and women choose their sexual partners with regards to age. Several studies have been conducted to investigate the associations between partner age differences in sexual relationships, sexual risk behaviours, HIV status and HIV acquisition risk. However, the evidence for increased individual level risk is mixed, with some studies showing a positive association between relationship age differences with HIV prevalence, while other studies that have measured HIV incidence have not found any clear association.
+
+The research question we intend to answer is whether there exists an association between age differences in relationships and relationship characteristics---condom use, sex frequency, partner type and relationship duration---that have previously been found to have a potential relationship with HIV risk. Using SHIMS baseline survey data, our objective is to investigate:
+
+1. The relationship between partner age and participant age 
+2. The relationship between condom use and age differences
+3. The relationship between sex frequency and age differences
+4. The relationship between partner type and age differences
+5. The relationship between relationship duration and age differences
+
+The following are the hypotheses in this study
+
+The average age difference between a participant and their sexual partner(s) does not change with age
+The average age difference between a participant and their sexual partner(s) changes with age
+The average age difference between a participant and their sexual partner(s) does not increase with increase in age
+The average age difference between a participant and their sexual partner(s) increases with increase in age
+
+The variation in age difference between the participant and their sexual partner(s) does not change function of age
+The variation in age difference between the participant and their sexual partner(s) is a function of age
+The variation in age difference between the participant and their sexual partner(s) does not increase with increase in age
+The variation in age difference between the participant and their sexual partner(s) increases with increase in age
+
+The probability of consistent condom use does not change with age difference
+The probability of consistent condom use changes with age difference
+The probability of consistent condom use does not decrease with increase in age difference
+The probability of consistent condom use decreases with increase in age difference
+
+The probability of high sex frequency does not change with age difference
+The probability of high sex frequency changes with age difference
+The probability of high sex frequency does not increase with increase in age difference
+The probability of high sex frequency increases with increase in age difference
+
+The probability of a sexual partner being a casual partner does not change with age difference
+The probability of a sexual partner being a casual partner changes with age difference
+The probability a sexual partner being a casual partner does not decrease with increase in age difference
+The probability a sexual partner being a casual partner decreases with increase in age difference
+
+The length of a sexual relationship does not change with age difference
+The length of a sexual relationship changes with age difference
+The length of a sexual relationship does not decrease with increase in age difference
+The length of a sexual relationship decreases with increase in age difference
+
+## Methods
+
+We used the 5% random subset of the SHIMS baseline survey male data in this analysis. We computed the age of the male participants when they had sexual relationship with the partner for the first time and excluded those male participants whose age was less than 15 years. Each row in the dataset represents a relationship. We had a total of 230 relationships that were reported by the male participants only.
+
+#### Statistical Analysis
+
+Our analysis focused on:
+
+1. relationship between the participant age and the partner's age
+2. four relatonship characteristics that have previously been found to have a potential relationship with HIV risk:
+    - condom use (ordinal; with levels "never","sometimes","always")
+    - sex frequency (ordinal; with levels "1","between 2-5","between 6-10","more than 10")
+    - partner type (ordinal,"husband/wife","regular partner","casual partner")
+    - relationship duration (continous, months)
+
+Age difference was calculated by subtrating the female partner's age from the male partner's age (negative age difference implies that the woman is older than the man). The relationship duration was calculated by getting the difference between the relationship began and when it ended. The relationship that were ongoing and the end date was indicated as the enuration date were denoted with an indicator variable. Those relationships that were ongoing had right-censored relationship durations.
+
+For starters, we wanted to investigate if the age of a participant had an effect on the age of the partner. We constructed a linear mixed effects model with a random effect for each participant.
+
+Using cumulative link mixed models, we created models treating condom use, sex frequency and partner type as outcome variables and the participant unique id as a random effect. To assess the relationship between relationship duration and age difference, we constructed a Cox Proportional Hazard model since the relationship duration in the SHIMS dataset is right censored.
+
+
+
+```{r AGEMIX_MODEL, echo=FALSE}
+model <- lme(Partner.age~Age.participant,
+             data = DT.Agemix.men,
+             method = "REML",
+             weights = varPower(value = 0.5, form = ~Age.participant + 1),
+             random = ~1|Uid)
+
+#summary(model)
+```
+
+```{r CONDOM_MODEL, echo=FALSE}
+# Part I: CONDOM FREQUENCY
+
+# (a) Effect of age difference on condom frequency with participant as random
+# effect
+# (b) Effect of age difference, age of participant and number of partners on 
+# condom frequency
+
+Condmod.1 <- clmm(Condom.frequency ~ ns(Age.difference,df = 4) + (1|Uid),
+                data = DT.reldata.men,
+                Hess = TRUE,
+                nAGQ = 7)
+
+#summary(Condmod.1)
+
+Condmod.2 <- clmm(Condom.frequency ~ ns(Age.difference,df = 4) + 
+                    ns(Age.participant,df = 4) +
+                    #ns(Age.difference,df = 4) * ns(Age.participant,df = 4)  + 
+                    No.partners + 
+                    (1|Uid),
+                  data = DT.reldata.men,
+                  Hess = TRUE,
+                  nAGQ = 7)
+
+# the interaction term: too many parameters (26) which makes model complicated to interpret
+# and may loose meaning
+
+#summary(Condmod.2)
+
+```
+
+```{r SEX_MODEL, echo=FALSE}
+# Part II: SEX FREQUENCY
+
+# (a) Effect of age difference on sex frequency with participant as random effect
+# (b) Effect of age difference, age of participant and number of partners on sex 
+# frequency with participant as random effect
+
+Sexmod.1 <- clmm(Sex.frequency ~ ns(Age.difference,df = 4) + (1|Uid),
+                data = DT.reldata.men,
+                Hess = TRUE,
+                nAGQ = 7)
+
+#summary(Sexmod.1)
+
+Sexmod.2 <- clmm(Sex.frequency ~ ns(Age.difference,df = 4) + ns(Age.participant,df = 4) +No.partners + (1|Uid),
+                 data = DT.reldata.men,
+                 Hess = TRUE,
+                 nAGQ = 12)
+
+#summary(Sexmod.2)
+```
+
+```{r PARTNER_MODEL, echo=FALSE}
+# Part III: PARTNER TYPE
+
+# (a) Effect of age difference on partner type with participant as random effect
+# (b) Effect of age difference, age of participant and number of partners on partner type
+# with participant as random effect
+
+Partmod.1 <- clmm(Partner.type ~ ns(Age.difference,df = 4) + (1|Uid),
+                data = DT.reldata.men,
+                Hess = TRUE,
+                nAGQ = 7)
+
+#summary(Partmod.1)
+
+Partmod.2 <- clmm(Partner.type ~ ns(Age.difference,df = 4) + 
+                    ns(Age.participant,df = 4) +
+                    #ns(Age.difference,df = 4) * ns(Age.participant, ds = 4) + 
+                    No.partners + 
+                    (1|Uid),
+                  data = DT.reldata.men,
+                  Hess = TRUE,
+                  nAGQ = 7)
+
+#summary(Partmod.2)
+
+```
+
+```{r RELATIONSHIP_MODEL, echo=FALSE}
+# Part V: RELATIONSHIP DURATION
+
+# (a) Effect of age difference on relationship duration with participant as random effect
+# (b) Effect of age difference, age of participant and number of partners on relationship 
+# duration with participant as random effect
+#-fit the cox model
+# censoring status, 0=censored(relationship not ended) , 1= observed(relationship ended)
+
+Reldurmod.1 <- coxph(Surv(Relationship.dur, Rel.ended == 1) ~ ns(Age.difference, df = 4),
+                     data = DT.reldata.men)
+
+#summary(Reldurmod.1)
+
+Reldurmod.2 <- coxph(Surv(Relationship.dur, Rel.ended == 1) ~ ns(Age.difference, df = 4) +
+                       ns(Age.participant, df = 4) +
+                       #ns(Age.difference,df = 4) * ns(Age.participant, ds = 4)+
+                       No.partners,
+                     data = DT.reldata.men)
+
+#summary(Reldurmod.2)
+```
+
+```{r TIDY_AGEMIX_MODEL, echo=FALSE}
+# Extract slope = Beta-coefficent of the fixed effect from model
+slope <- model$coefficients$fixed[2]
+
+# Extract population intercepts = expected age of partner for a man starting a relationship at age 15
+intercept <- model$coefficients$fixed[1]
+
+# Extract power coefficient of variance function
+power <- (attributes(model$apVar)$Pars["varStruct.power"])
+power.lowerbound <- intervals(model)$varStruct[,1]
+power.upperbound <- intervals(model)$varStruct[,3]
+
+# Extract between-individual variance
+between.var <- VarCorr(model)[1] %>% as.numeric()
+
+# Extract residual variance = within-individual variance
+within.var <- VarCorr(model)[2] %>% as.numeric()
+
+```
+
+```{r TIDY_CONDOM_MODEL_OUTPUTS, echo=FALSE, message=FALSE, warning=FALSE}
+# Part I: CONDOM FREQUENCY
+
+# (a) for univariate model
+tidycond.1 <- Effect("Age.difference", Condmod.1, 
+                     xlevels = list(Age.difference = 50)) %>%
+  data.frame() %>%
+  select(-matches("logit.")) %>%
+  gather(var, value, - Age.difference) %>%
+  separate(var, c("fit", "cond"), extra = "merge") %>%
+  mutate(cond = gsub("prob.", "", cond) %>%
+           ordered(levels = freqlevels))%>%
+  spread(fit, value) 
+
+# (b) for multivariate model
+
+# (i) Age difference effect
+tidycond.2a <- Effect("Age.difference", Condmod.2, 
+                      xlevels = list(Age.difference = 50)) %>%
+  data.frame() %>%
+  select(-matches("logit.")) %>%
+  gather(var, value, - Age.difference) %>%
+  separate(var, c("fit", "cond"), extra = "merge") %>%
+  mutate(cond = gsub("prob.", "", cond) %>%
+           ordered(levels = freqlevels))%>%
+  spread(fit, value)
+# (ii) Age of participant effect
+tidycond.2b <- Effect("Age.participant", Condmod.2, 
+                      xlevels = list(Age.participant = 40)) %>%
+  data.frame() %>%
+  select(-matches("logit.")) %>%
+  gather(var, value, - Age.participant) %>%
+  separate(var, c("fit", "cond"), extra = "merge") %>%
+  mutate(cond = gsub("prob.", "", cond) %>%
+           ordered(levels = freqlevels))%>%
+  spread(fit, value) 
+
+#(c) Predicted effects on condom frequency
+
+#(i) for univariate
+tidycond.3 <- OrdPred(Condmod.1,"Age.difference",DT.reldata.men)
+
+#(ii) for multivarite
+# Age difference
+tidycond.3a <- OrdPred(Condmod.2,"Age.difference",DT.reldata.men)
+
+# Age participant
+tidycond.3b <- OrdPred(Condmod.2,"Age.participant",DT.reldata.men)
+
+
+```
+
+```{r TIDY_SEX_MODEL_OUTPUTS, eval= TRUE, echo=FALSE, message=FALSE, warning=FALSE}
+# Part II: SEX FREQUENCY
+
+# (a) for univariate model
+tidysf.1 <- Effect("Age.difference", Sexmod.1, 
+                   xlevels = list(Age.difference = 50)) %>%
+  data.frame() %>%
+  select(-matches("logit.")) %>%
+  gather(var, value, - Age.difference) %>%
+  separate(var, c("fit", "cond"), extra = "merge") %>%
+  mutate(cond = gsub("X", "", cond)) %>%
+  mutate(cond = gsub("prob.", "", cond) %>%
+           ordered(levels = c("1","between.2.5","between.6.10","more.than.10"))%>%
+           plyr::mapvalues(from = c("1","between.2.5","between.6.10","more.than.10"),
+                           to = sexlevels)) %>% 
+  spread(fit, value) 
+
+# (b) for multivariate model
+
+# (i) Age difference effect
+
+tidysf.2a <- Effect("Age.difference", Sexmod.2, 
+                    xlevels = list(Age.difference = 50)) %>%
+  data.frame() %>%
+  select(-matches("logit.")) %>%
+  gather(var, value, - Age.difference) %>%
+  separate(var, c("fit", "cond"), extra = "merge") %>%
+  mutate(cond = gsub("X", "", cond)) %>%
+  mutate(cond = gsub("prob.", "", cond) %>%
+           ordered(levels = c("1","between.2.5","between.6.10","more.than.10"))%>%
+           plyr::mapvalues(from = c("1","between.2.5","between.6.10","more.than.10"),
+                           to = sexlevels)) %>% 
+  spread(fit, value) 
+
+# (ii) Age of participant effect
+
+tidysf.2b <- Effect("Age.participant", Sexmod.2, 
+                    xlevels = list(Age.participant = 40)) %>%
+  data.frame() %>%
+  select(-matches("logit.")) %>%
+  gather(var, value, - Age.participant) %>%
+  separate(var, c("fit", "cond"), extra = "merge") %>%
+  mutate(cond = gsub("X", "", cond)) %>%
+  mutate(cond = gsub("prob.", "", cond) %>%
+           ordered(levels = c("1","between.2.5","between.6.10","more.than.10"))%>%
+           plyr::mapvalues(from = c("1","between.2.5","between.6.10","more.than.10"),
+                           to = sexlevels)) %>% 
+  spread(fit, value) 
+
+#(c) Predicted effects on sex frequency
+
+#(i) for univariate
+tidysex.3 <-  OrdPred(Sexmod.1,"Age.difference",DT.reldata.men)
+
+#(ii) for multivarite
+# Age difference
+
+tidysex.3a <-  OrdPred(Sexmod.2,"Age.difference",DT.reldata.men)
+
+# Age of participant
+tidysex.3b <-  OrdPred(Sexmod.2,"Age.participant",DT.reldata.men)
+
+
+```
+
+```{r TIDY_PARTNER_MODEL_OUTPUTS, echo=FALSE, message=FALSE, warning=FALSE}
+# Part III: PARTNER TYPE
+
+# (a) for univariate model
+tidypart.1 <- Effect("Age.difference", Partmod.1, 
+                     xlevels = list(Age.difference = 50)) %>%
+  data.frame() %>%
+  select(-matches("logit.")) %>%
+  gather(var, value, - Age.difference) %>%
+  separate(var, c("fit", "cond"), extra = "merge") %>%
+  mutate(cond = gsub("prob.", "", cond) %>%
+           ordered(levels = c("husband.wife","regular.partner","casual.partner"))%>%
+           plyr::mapvalues(from = c("husband.wife","regular.partner","casual.partner"),
+                           to = partlevels)) %>% 
+  spread(fit, value) 
+
+# (b) for multivariate model
+
+# (i) Age difference effect
+tidypart.2a <- Effect("Age.difference", Partmod.2, 
+                      xlevels = list(Age.difference = 50)) %>%
+  data.frame() %>%
+  select(-matches("logit.")) %>%
+  gather(var, value, - Age.difference) %>%
+  separate(var, c("fit", "cond"), extra = "merge") %>%
+  mutate(cond = gsub("prob.", "", cond) %>%
+           ordered(levels = c("husband.wife","regular.partner","casual.partner"))%>%
+           plyr::mapvalues(from = c("husband.wife","regular.partner","casual.partner"),
+                           to = partlevels)) %>% 
+  spread(fit, value) 
+
+# (ii) Age of participant effect
+tidypart.2b <- Effect("Age.participant", Partmod.2, 
+                      xlevels = list(Age.participant = 40)) %>%
+  data.frame() %>%
+  select(-matches("logit.")) %>%
+  gather(var, value, - Age.participant) %>%
+  separate(var, c("fit", "cond"), extra = "merge") %>%
+  mutate(cond = gsub("prob.", "", cond) %>%
+           ordered(levels = c("husband.wife","regular.partner","casual.partner"))%>%
+           plyr::mapvalues(from = c("husband.wife","regular.partner","casual.partner"),
+                           to = partlevels)) %>% 
+  spread(fit, value) 
+
+#(c) Predicted effects on partner type
+
+#(i) for univariate
+
+tidypart.3 <- OrdPred(Partmod.1,"Age.difference", DT.reldata.men)
+
+#(ii) for multivarite
+# Age difference
+
+tidypart.3a <- OrdPred(Partmod.2,"Age.difference", DT.reldata.men)
+
+# Age of participant
+tidypart.3b <- OrdPred(Partmod.2,"Age.participant", DT.reldata.men)
+
+
+```
+
+```{r TIDY_RELATIONSHIP_MODEL_OUTPUTS, echo=FALSE, warning=FALSE, message=FALSE,include=FALSE}
+# Part V: RELATIONSHIP DURATION
+
+# Obtain survival times at different percentiles of agedif
+# percentiles <- quantile(DT.reldata.men$Age.difference, prob = c(.025, .25, .5, .75, .975))
+percentiles <- c(-4.83526999316473,1.33561175666439,3.98222829801777,7.33082706766918,25.6226930963773)
+# compute expected survival probabilities at different times and tidy the data frame
+
+tidyreldur.1 <- survexp(~ Age.difference, 
+                       data = DT.reldata.men, 
+                       ratetable = Reldurmod.1) %>%
+  tidy() %>%
+  select(-matches("n.risk")) %>%
+  gather(var, value, -time) %>%
+  mutate(var = gsub("surv.Age.difference\\.", "", var),
+         Age.difference = gsub("^\\D", "-", var) %>%
+           as.numeric()) %>%
+  select(-var) %>%
+  filter(Age.difference %in% percentiles) %>%
+  mutate(Age.difference = factor(Age.difference, 
+                         levels = percentiles,
+                         labels = c("5yrs younger", 
+                                    "1yr older", 
+                                    "3yrs older",
+                                    "7yrs older",
+                                    "25yrs older")))
+
+tidyreldur.2 <- visreg(Reldurmod.1,
+                       xvar = "Age.difference",
+                       type = "contrast",
+                       trans = exp) %$%
+  data.frame(fit) %>%
+  mutate(hr = visregFit,
+         lwr = visregLwr,
+         upr = visregUpr)
+
+# (b) multivariate
+
+tidyreldur.1a <- survexp(~ Age.difference, 
+                        data = DT.reldata.men, 
+                        ratetable = Reldurmod.2) %>%
+  tidy() %>%
+  select(-matches("n.risk")) %>%
+  gather(var, value, -time) %>%
+  mutate(var = gsub("surv.Age.difference\\.", "", var),
+         Age.difference = gsub("^\\D", "-", var) %>%
+           as.numeric()) %>%
+  select(-var) %>%
+  filter(Age.difference %in% percentiles) %>%
+  mutate(Age.difference = factor(Age.difference, 
+                                 levels = percentiles,
+                                 labels = c("5yrs younger", 
+                                            "1yr older", 
+                                            "3yrs older",
+                                            "7yrs older",
+                                            "25yrs older")))
+tidyreldur.2a <- visreg(Reldurmod.2,
+                       xvar = "Age.difference",
+                       type = "contrast",
+                       trans = exp) %$%
+  data.frame(fit) %>%
+  mutate(hr = visregFit,
+         lwr = visregLwr,
+         upr = visregUpr)
+
+```
+
+## Results
+
+**Figure 1. Plot of partner age against age of participant.**
+```{r AGEMIX_PLOT, echo=FALSE, fig.align="center", fig.height=4.5,fig.width=7.5}
+theme_set(theme_bw())
+fixParam <- fixef(model)
+ranParam <- ranef(model)
+params <- ranParam[1]+fixParam[1]
+
+Raw_data <- ggplot(DT.Agemix.men,aes(Age.participant,Partner.age)) +
+  geom_jitter(size=3,color="black", width = 0.25, height = 0.25, alpha = 0.5) +
+  xlab("Age") +
+  ylab("Partner age") +
+  scale_x_continuous(labels = function(x)x+15, breaks = scales::pretty_breaks(n = 10)) +
+  scale_y_continuous(breaks = scales::pretty_breaks(n = 10)) +
+  theme(axis.text.x = element_text(size=12),
+        axis.text.y = element_text(size=12)) +
+  theme(text=element_text( size=12)) + 
+  geom_abline(aes(intercept = fixParam[1],slope = fixParam[2],color = "Population average"), size = 1.25) +
+  geom_abline(aes(intercept = 15,slope =1,color = "Diagonal (x = y)"), size = 1.25) +
+  scale_colour_manual(name="Line Colour",
+    values=c("Population average" = "#D95F02", "Diagonal (x = y)" ="#1B9E77")) 
+print(Raw_data)
+
+# 
+# subNum <- unique(DT.Agemix.men$Uid)
+# 
+# for(i in 1:length(subNum)){
+#   Raw_data <- Raw_data + geom_abline(intercept = params[i,1],slope = fixParam[2],color ="lightskyblue2")
+# }
+# 
+# Raw_data <- Raw_data + geom_abline(intercept = fixParam[1],slope = fixParam[2],color = "blue",size=1.5)
+# print(Raw_data)
+```
+
+##### Higlights from Figure 1:
+
+- A cone-like shape showing that the variability of the partner age widens as the age of the man increases.
+- On average, men tend to choose younger sexual partners generally although the variation in age differences increases with the age of the man.
+
+**Figure 2. Results of cumulative-link mixed model with condom use as the response and age difference as the predictor.** In this model, age difference was a spline term. **a.** Cumulative probability of condom use categories. **b.** Predicted ordinal condom use score (scored as 0 for "never" up to 2 for "always"), with shaded areas representing the 95% confidence interval.
+
+```{r CONDOM_PLOTS, echo=FALSE, fig.align="center", fig.width=8, fig.height=8, fig.asp=1, warning=FALSE}
+# Part I: CONDOM FREQUENCY
+theme_set(theme_bw())
+# (a) Univariate
+
+cond.1a <- tidycond.1 %>%
+  ggplot(aes(x = Age.difference, y = prob, fill = cond)) +
+  geom_area() +
+  xlab("Age difference") +
+  ylab("Probability") +
+  scale_fill_brewer(name = "Condom use", 
+                    palette = "Dark2")+
+  theme(axis.text.x = element_text(size=12),
+        axis.text.y = element_text(size=12)) +
+  theme(text=element_text( size=12)) 
+
+cond.pred.3 <- tidycond.3 %>%
+  ggplot(aes(x = Age.difference, y = fit)) +
+  geom_line(size = 1, color = "#009E73") +
+  geom_ribbon(aes(ymin = lwr, ymax = upr),
+              alpha = 0.25,
+              fill = "#009E73") +
+  xlab("Age difference") +
+  ylab("Condom use score") +
+  theme(axis.text.x = element_text(size=12),
+        axis.text.y = element_text(size=12)) +
+  theme(text=element_text( size=12)) 
+
+plot_grid(cond.1a + theme(legend.position = "none"),
+          get_legend(cond.1a),
+          cond.pred.3,
+          labels = c("a","","b"),
+          ncol = 2,
+          align = "vh",
+          rel_widths = c(1, 0.17))
+
+# grid.draw(ggarrange(cond.1a,
+#                     cond.pred.3,
+#                     ncol = 1))
+```
+
+##### Higlights from Figure 2:
+
+- The probability of consistent condom use decreases as the age difference between the man and the partner increases.
+- The large peak observed when the age difference is less than -10 is due to lack of enough data.
+- The overall condom use decreasing as the age difference increases as shown in Panel (b). Patterns outside the age difference range of -5 years to 20 years  cannot be inferred clearly because of the large confidence intervals.
+
+**Figure 3. Results of cumulative-link mixed model with condom use as the response and age difference as the predictor while controlling for age and the number of partners.** In this model, both age difference and age of participant were spline terms. **a.** Cumulative probability of condom use for different age differences. **b.** Cumulative probability of condom use for different age of participants. **c.** Predicted effect of age difference on ordinal condom use score (scored as 0 for "never" up to 2 for "always"), with shaded areas representing the 95% confidence interval. **d.** Predicted effect of age of participant on ordinal condom use score, with shaded areas representing the 95% confidence interval.
+
+```{r CONDOM_PLOTS2, echo=FALSE, fig.align="center", fig.width=8, fig.height=8, fig.asp=1, warning=FALSE}
+theme_set(theme_bw())
+# (b) Multivariate
+
+cond.2a <- tidycond.2a %>%
+  ggplot(aes(x = Age.difference, y = prob, fill = cond)) +
+  geom_area() +
+  xlab("Age difference") +
+  ylab("Probability") +
+  scale_fill_brewer(name = "Condom use", 
+                    palette = "Dark2") +
+  theme(axis.text.x = element_text(size=12),
+        axis.text.y = element_text(size=12)) +
+  theme(text=element_text( size=12)) 
+
+cond.2b <- tidycond.2b %>%
+  ggplot(aes(x = Age.participant, y = prob, fill = cond)) +
+  geom_area() +
+  xlab("Age") +
+  ylab("Probability") +
+  scale_fill_brewer(name = "Condom use", 
+                    palette = "Dark2") +
+  theme(axis.text.x = element_text(size=12),
+        axis.text.y = element_text(size=12)) +
+  theme(text=element_text( size=12)) 
+
+cond.pred.3a <- tidycond.3a %>%
+  ggplot(aes(x = Age.difference, y = fit)) +
+  geom_line(size = 1, color = "#009E73") +
+  geom_ribbon(aes(ymin = lwr, ymax = upr),
+              alpha = 0.25,
+              fill = "#009E73") +
+  xlab("Age difference") +
+  ylab("Condom Use Score") +
+  theme(axis.text.x = element_text(size=12),
+        axis.text.y = element_text(size=12)) +
+  theme(text=element_text( size=12)) 
+
+cond.pred.3b <- tidycond.3b %>%
+  ggplot(aes(x = Age.participant, y = fit)) +
+  geom_line(size = 1, color = "#009E73") +
+  geom_ribbon(aes(ymin = lwr, ymax = upr),
+              alpha = 0.25,
+              fill = "#009E73") +
+  xlab("Age") +
+  ylab("Condom Use Score") +
+  theme(axis.text.x = element_text(size=12),
+        axis.text.y = element_text(size=12)) +
+  theme(text=element_text( size=12)) +
+  ylim(0,2)
+
+plot_grid(cond.2a + theme(legend.position = "none"),
+          cond.2b + theme(legend.position = "none"),
+          get_legend(cond.2a),
+          cond.pred.3a + theme(legend.position = "none"),
+          cond.pred.3b + theme(legend.position = "none"),
+          NULL,
+          labels = c("a", "b", "", "c", "d", ""),
+          ncol = 3,
+          rel_widths = c(1, 1, 0.35))
+
+# grid.draw(ggarrange(cond.2a,
+#                     cond.2b,
+#                     cond.pred.3a,
+#                     cond.pred.3b,
+#                     ncol = 2))
+```
+
+##### Higlights from Figure 3:
+
+- When we account for age as a predictor of condom use, we obseve similar trend like when we had age difference as the only predictor, i.e The probability of always using a condom decreases as the age difference between the man and the partner increases.
+- There is a notable peak in the probability of condom use when the age difference is around 10 years.
+- Panel (b) shows that the probability of using a condom peaks for men aged around 18 years then drops.
+- There is an overall increase in condom use for age differences between 0 and 10 years then it starts decreasing as the age difference greater than 10 years.
+- Young people (20--32 years) generally use condoms inconsistently.
+
+**Figure 4. Results of cumulative-link mixed model with sex frequency as the response and age difference as the predictor.** In this model, age difference was a spline term. **a.** Cumulative probability of sex frequency (in the last 6 months) categories. **b.** Predicted effect of age difference on ordinal sex frequency score (scored as 0 for "1 time" up to 3 for "more than 10" times in the last six months), with shaded areas representing the 95% confidence interval.
+
+```{r SEX_PLOTS, echo=FALSE, eval=TRUE,fig.align="center", fig.width=8, fig.height=8, fig.asp=1, warning=FALSE}
+# Part II: SEX FREQUENCY
+theme_set(theme_bw())
+# Effects plot for sex frequency model
+
+# univariate
+sex.1a <- tidysf.1 %>%
+  ggplot(aes(x = Age.difference, y = prob, fill = cond)) +
+  geom_area() +
+  xlab("Age difference") +
+  ylab("Probability") +
+  scale_fill_brewer(name = "Sex frequency", 
+                    palette = "Dark2") +
+  theme(axis.text.x = element_text(size=12),
+        axis.text.y = element_text(size=12)) +
+  theme(text=element_text(size=12)) 
+
+sex.pred.3 <- tidysex.3 %>%
+  ggplot(aes(x = Age.difference, y = fit)) +
+  geom_line(size = 1, color = "#009E73") +
+  geom_ribbon(aes(ymin = lwr, ymax = upr),
+              alpha = 0.25,
+              fill = "#009E73") +
+  xlab("Age difference") +
+  ylab("Sex frequency score") +
+  theme(axis.text.x = element_text(size=12),
+        axis.text.y = element_text(size=12)) +
+  theme(text=element_text(size=12)) +
+  ylim(0,3)
+
+
+plot_grid(sex.1a + theme(legend.position = "none"),
+          get_legend(sex.1a),
+          sex.pred.3,
+          labels = c("a","","b"),
+          ncol = 2,
+          align = "v",
+          rel_widths = c(1, 0.22))
+
+# grid.draw(ggarrange(sex.1a,
+#                     sex.pred.3,
+#                     ncol = 1))
+
+```
+
+##### Higlights from Figure 4:
+
+- Sex frequency is highest when the man is 2 years younger than the partner and 15 years older than the partner.
+- There is a general increase in sex frequency besides the drop observed when the age difference is 4 years.
+
+**Figure 5. Results of cumulative-link mixed model with sex frequency as the response and age difference as the predictor while controlling for age and the number of partners.** In this model, both age difference and age of participant were spline terms. **a.** Cumulative probability of sex frequency (in the last 6 months) for different age differences. **b.** Cumulative probability of sex frequencyfor different age of participants. **c.** Predicted effect of age difference on ordinal sex frequency score (scored as 0 for "1 time" up to 3 for "more than 10" times in the last six months), with shaded areas representing the 95% confidence interval. **d.** Predicted effect of age of participant on ordinal sex frequency score, with shaded areas representing the 95% confidence interval.
+
+```{r SEX_PLOTS2,eval=TRUE, echo=FALSE, fig.align="center", fig.width=8, fig.height=8, fig.asp=1, warning=FALSE}
+theme_set(theme_bw())
+# multivariate
+
+sex.2a <- tidysf.2a %>%
+  ggplot(aes(x = Age.difference, y = prob, fill = cond)) +
+  geom_area() +
+  xlab("Age difference") +
+  ylab("Probability") +
+  scale_fill_brewer(name = "Sex Frequency", 
+                    palette = "Dark2")  +
+  theme(axis.text.x = element_text(size=12),
+        axis.text.y = element_text(size=12)) +
+  theme(text=element_text(size=12))
+
+sex.2b <- tidysf.2b %>%
+  ggplot(aes(x = Age.participant, y = prob, fill = cond)) +
+  geom_area() +
+  xlab("Age") +
+  ylab("Probability") +
+  scale_fill_brewer(name = "Sex Frequency", 
+                    palette = "Dark2") +
+  theme(axis.text.x = element_text(size=12),
+        axis.text.y = element_text(size=12)) +
+  theme(text=element_text(size=12)) 
+  
+
+sex.pred.3a <- tidysex.3a %>%
+  ggplot(aes(x = Age.difference, y = fit)) +
+  geom_line(size = 1, color = "#009E73") +
+  geom_ribbon(aes(ymin = lwr, ymax = upr),
+              alpha = 0.25,
+              fill = "#009E73") +
+  xlab("Age difference") +
+  ylab("Sex Frequency Score") +
+  theme(axis.text.x = element_text(size=12),
+        axis.text.y = element_text(size=12)) +
+  theme(text=element_text(size=12)) +
+  ylim(0,3)
+
+
+sex.pred.3b <- tidysex.3b %>%
+  ggplot(aes(x = Age.participant, y = fit)) +
+  geom_line(size = 1, color = "#009E73") +
+  geom_ribbon(aes(ymin = lwr, ymax = upr),
+              alpha = 0.25,
+              fill = "#009E73") +
+  xlab("Age") +
+  ylab("Sex Frequency Score") +
+  theme(axis.text.x = element_text(size=12),
+        axis.text.y = element_text(size=12)) +
+  theme(text=element_text(size=12)) +
+  ylim(0,3)
+
+plot_grid(sex.2a + theme(legend.position = "none"),
+          sex.2b + theme(legend.position = "none"),
+          get_legend(sex.2b),
+          sex.pred.3a + theme(legend.position = "none"),
+          sex.pred.3b + theme(legend.position = "none"),
+          NULL,
+          labels = c("a", "b", "", "c", "d", ""),
+          ncol = 3,
+          rel_widths = c(2,2,0.85))
+
+# grid.draw(ggarrange(sex.2a,
+#                     sex.2b,
+#                     sex.pred.3a,
+#                     sex.pred.3b,
+#                     ncol = 2))
+```
+
+##### Higlights from Figure 5:
+
+- Panel (a) shows a similar trend like in Figure 4a when we had not adjusted for the age and the number of partners.
+- There is a non linear increase in sex frequency as the age of the man increases.
+- Extreme values of age differences and age have large confidence intervals.
+
+**Figure 6. Results of cumulative-link mixed model with partner type as the response and age difference as the predictor.** In this model, age difference was a spline term. **a.** Cumulative probability of partner type categories. **b.** Predicted effect of age difference on ordinal partner type score (scored as 0 for "husband/wife" up to 2 for "casual partner"), with shaded areas representing the 95% confidence interval.
+
+```{r PARTNER_PLOTS, echo=FALSE, fig.align="center", fig.width=8, fig.height=8, fig.asp=1, warning=FALSE}
+# Part III: PARTNER TYPE
+theme_set(theme_bw())
+# Effects plot for partner type models
+
+#univariate
+part.1a <- tidypart.1 %>%
+  ggplot(aes(x = Age.difference, y = prob, fill = cond)) +
+  geom_area() +
+  xlab("Age difference") +
+  ylab("Probability") +
+  scale_fill_brewer(name = "Partner type", 
+                    palette = "Dark2") +
+  theme(axis.text.x = element_text(size=12),
+        axis.text.y = element_text(size=12)) +
+  theme(text=element_text(size=12)) 
+
+part.pred.3 <- tidypart.3 %>% 
+  ggplot(aes(x = Age.difference, y = fit)) +
+  geom_line(size = 1, color = "#009E73") +
+  geom_ribbon(aes(ymin = lwr, ymax = upr),
+              alpha = 0.25,
+              fill = "#009E73") +
+  xlab("Age difference") +
+  ylab("Partner Type Score")+
+  theme(axis.text.x = element_text(size=12),
+        axis.text.y = element_text(size=12)) +
+  theme(text=element_text(size=12)) 
+
+plot_grid(part.1a + theme(legend.position = "none"),
+          get_legend(part.1a),
+          part.pred.3,
+          labels = c("a","","b"),
+          ncol = 2,
+          align = "v",
+          rel_widths = c(1, 0.22))
+
+# grid.draw(ggarrange(part.1a,
+#                     part.pred.3,
+#                     ncol = 1))
+
+```
+
+##### Higlights from Figure 6
+
+- The sexaul partner is a casual partner in most of the sexual relationships where the man is younger than the woman.
+- There is an increase in probabilty of the partner being a wife as the age difference increases.
+
+**Figure 7. Results of cumulative-link mixed model with partner type as the response and age difference as the predictor while controlling for age and the number of partners.** In this model, both age difference and age of participant were spline terms. **a.** Cumulative probability of partner type for different age differences. **b.** Cumulative probability of partner type for different age of participant. **c.** Predicted effect of age difference on ordinal partner type score (scored as 0 for "husband/wife" up to 2 for "casual partner"), with shaded areas representing the 95% confidence interval. **d.** Predicted effect of age of participant on ordinal partner type score, with shaded areas representing the 95% confidence interval.
+
+```{r PARTNER_PLOTS2, echo=FALSE, fig.align="center", fig.width=8, fig.height=8, fig.asp=1, warning=FALSE}
+theme_set(theme_bw())
+#multivariate
+part.2a <- tidypart.2a %>%
+  ggplot(aes(x = Age.difference, y = prob, fill = cond)) +
+  geom_area() +
+  xlab("Age difference") +
+  ylab("Probability") +
+  scale_fill_brewer(name = "Partner type", 
+                    palette = "Dark2") +
+  theme(axis.text.x = element_text(size=12),
+        axis.text.y = element_text(size=12)) +
+  theme(text=element_text(size=12)) 
+
+part.2b <- tidypart.2b %>%
+  ggplot(aes(x = Age.participant, y = prob, fill = cond)) +
+  geom_area() +
+  xlab("Age") +
+  ylab("Probability") +
+  scale_fill_brewer(name = "Partner type", 
+                    palette = "Dark2") +
+  theme(axis.text.x = element_text(size=12),
+        axis.text.y = element_text(size=12)) +
+  theme(text=element_text(size=12))
+
+part.pred.3a <- tidypart.3a %>% 
+  ggplot(aes(x = Age.difference, y = fit)) +
+  geom_line(size = 1, color = "#009E73") +
+  geom_ribbon(aes(ymin = lwr, ymax = upr),
+              alpha = 0.25,
+              fill = "#009E73") +
+  xlab("Age difference") +
+  ylab("Partner Type Score") +
+  theme(axis.text.x = element_text(size=12),
+        axis.text.y = element_text(size=12)) +
+  theme(text=element_text(size=12))
+
+part.pred.3b <- tidypart.3b %>% 
+  ggplot(aes(x = Age.participant, y = fit)) +
+  geom_line(size = 1, color = "#009E73") +
+  geom_ribbon(aes(ymin = lwr, ymax = upr),
+              alpha = 0.25,
+              fill = "#009E73") +
+  xlab("Age") +
+  ylab("Partner Type Score") +
+  theme(axis.text.x = element_text(size=12),
+        axis.text.y = element_text(size=12)) +
+  theme(text=element_text(size=12)) +
+  ylim(NA, 2)
+
+plot_grid(part.2a + theme(legend.position = "none"),
+          part.2b + theme(legend.position = "none"),
+          get_legend(part.2b),
+          part.pred.3a + theme(legend.position = "none"),
+          part.pred.3b + theme(legend.position = "none"),
+          NULL,
+          labels = c("a", "b", "", "c", "d", ""),
+          ncol = 3,
+          rel_widths = c(1, 1, 0.44))
+
+# grid.draw(ggarrange(part.2a,
+#                     part.2b,
+#                     part.pred.3a,
+#                     part.pred.3b,
+#                     ncol = 2))
+```
+
+##### Higlights from Figure 7
+
+- The probability of a partner being a wife increases as the age difference between the man and the partner increases.
+- As the man ages, the probability of the partner being a wife increases.
+- Younger men (less than 20 years) generally have casual partners.
+- Extreme values of age differences and age have large confidence intervals.
+
+**Figure 8. Results of Cox Proportional Hazards Model with relationship duration as the response and age difference as the predictor.** In this model, age difference was a spline term. **a.** Predicted HRs for age differences, with mean age difference (6.2 years) as the reference. **b.** Expected survival curves for selected age differences.
+
+```{r RELATIONSHIP_PLOTS, echo=FALSE, fig.align="center", fig.width=8, fig.height=8, fig.asp=1,warning=FALSE}
+# Part V: RELATIONSHIP DURATION
+theme_set(theme_bw())
+# (a) univariate
+
+
+rel.pred.1 <- tidyreldur.2 %>%
+  ggplot(aes(x = Age.difference, y = hr)) +
+  geom_ribbon(aes(ymin = lwr, ymax = upr),
+              alpha = 0.25, 
+              fill = "#009E73") +
+  geom_line(size = 1, 
+            color = "#009E73") +
+  geom_hline(yintercept = 1, linetype = "dashed") +
+  xlab("Age difference") +
+  ylab("HR (log)") +
+  scale_y_log10() +
+  theme(axis.text.x = element_text(size=12),
+        axis.text.y = element_text(size=12))+
+  theme(text=element_text(size=12)) 
+  
+
+reldur.1 <- tidyreldur.1 %>%
+  ggplot(aes(x = time, 
+             y = value)) +
+  geom_line(aes(color = Age.difference), size = 1) +
+  geom_hline(yintercept = 0.5, colour = "black", linetype = 2) + 
+  xlab("Relationship duration (Weeks)") +
+  ylab("Probability of survival") +
+  scale_color_brewer(name = "Age difference", palette = "Dark2") +
+  theme(axis.text.x = element_text(size=12),
+        axis.text.y = element_text(size=12))+
+  theme(text=element_text(size=12)) 
+
+
+plot_grid(rel.pred.1,
+          NULL,
+          reldur.1 + theme(legend.position = "none"),
+          get_legend(reldur.1),
+          labels = c("a","","b",""),
+          ncol = 2,
+          align = "v",
+          rel_widths = c(1, 0.22))
+
+# grid.draw(ggarrange(rel.pred.1,
+#                     reldur.1,
+#                     ncol = 1))
+```
+
+##### Higlights from Figure 8
+
+- The hazard of ending a relationship appears to be greater for relationships where the man is 6 years older or more although the confidence intervals include one suggesting that the difference is not significant. 
+- When the age difference is between -5 and  years, the hazard of ending a relationship is much lower.
+- The relationship duration is shortest when the man is 25 years older than the partner and longest when the man is 1 year older than the partner.
+
+**Figure 9. Results of Cox Proportional Hazards Model with relationship duration as the response and age difference as the predictor while controlling for age and the number of partners.** In this model, both age difference and age of partipant were spline terms. **a.** Predicted HRs for age differences, with mean (age difference = 6.2) as the reference. **b.** Expected survival curves for selected age differences.
+
+```{r RELATIONSHIP_PLOTS2, echo=FALSE, fig.align="center", fig.width=8, fig.height=8, fig.asp=1,warning=FALSE}
+theme_set(theme_bw())
+# (b) multivariate
+
+
+rel.pred.2 <- tidyreldur.2a %>%
+  ggplot(aes(x = Age.difference, y = hr)) +
+  geom_ribbon(aes(ymin = lwr, ymax = upr),
+              alpha = 0.25, 
+              fill = "#009E73") +
+  geom_line(size = 1, 
+            color = "#009E73") +
+  geom_hline(yintercept = 1, linetype = "dashed") +
+  xlab("Age difference") +
+  ylab("HR (log)") +
+  scale_y_log10() +
+  theme(legend.position = "none") +
+  theme(axis.text.x = element_text(size=12),
+        axis.text.y = element_text(size=12))+
+  theme(text=element_text(size=12)) 
+
+
+reldur.2 <- tidyreldur.1a %>%
+  ggplot(aes(x = time, 
+             y = value)) +
+  geom_line(aes(color = Age.difference), size = 1) +
+  geom_hline(yintercept = 0.5, colour = "black", linetype = 2) + 
+  xlab("Relationship duration (Weeks)") +
+  ylab("Probability of survival") +
+  scale_color_brewer(name = "Age difference", palette = "Dark2") +
+  theme(axis.text.x = element_text(size=12),
+        axis.text.y = element_text(size=12))+
+  theme(text=element_text(size=12)) 
+
+
+plot_grid(rel.pred.2,
+          NULL,
+          reldur.2 + theme(legend.position = "none"),
+          get_legend(reldur.2),
+          labels = c("a","","b",""),
+          ncol = 2,
+          align = "v",
+          rel_widths = c(1, 0.22))
+
+# grid.draw(ggarrange(rel.pred.2,
+#                     reldur.2,
+#                     ncol = 1))
+
+```
+
+##### Higlights from Figure 9
+
+-  The hazard of ending a relationship is greater for relationships where the man is younger than partner and lowest when the age difference is greater than 20 years. 
+- The relationship durations is shortest when the man is 5 years younger than the partner and when longest when the man is 1 year older than the partner.
+
+
