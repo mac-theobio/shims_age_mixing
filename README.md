@@ -1,4 +1,4 @@
-Data from SHIMS [[add link]]
+Data from SHIMS [http://shims.icap.columbia.edu/]
 
 The prevalence sample is the first sample
 
