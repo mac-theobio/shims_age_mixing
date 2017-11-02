@@ -1,8 +1,8 @@
 library(readxl)
 library(dplyr)
-library(zoo)
+#library(zoo)
 
-setwd("/Users/emanuel/Documents/shims_age_mixing")
+setwd("/Users/Emanuel/Desktop/shims_age_mixing-master")
 source("Functions_for_SHIMS_study.R")
 #####################################################################################
 # Read the data
@@ -12,12 +12,13 @@ Sample.Baseline <- read_excel("SAMPLE_T1_2017-05-02_00-59-36.xlsx")
 names(Sample.Baseline) <- make.names(names(Sample.Baseline))
 
 # ordering levels
-freqlevels = c("always","sometimes","never")
+freqlevels = c("never","sometimes","always")
 sexlevels = c("1","between 2-5","between 6-10","more than 10")
 partlevels = c("husband/wife","regular partner","casual partner")
 
 # Subset the data as you change the variable names and data types
 T1.agemix <- Sample.Baseline %>% transmute(Uid = Uid,
+                                           Region,
                                            Gender = as.factor(REQsex),
                                            Age = Age.REQ,
                                            EnrollmentDate = as.POSIXct(REQ.Erdt),
@@ -62,33 +63,36 @@ T1.agemix$Age.res.p3 <- AgeResAtRelOnset(currentage = T1.agemix$Age,
                                          daterel = DateCleaning(T1.agemix$Start.rel.date.p3))
 
 ######################################################################################
-# create a variable for relationship duration [months]
+# create a variable for relationship duration [weeks]
 
-T1.agemix$Rel.dur.p1 <- as.numeric((as.yearmon(DateCleaning(T1.agemix$End.rel.date.p1))-
-                                      as.yearmon(DateCleaning(T1.agemix$Start.rel.date.p1)))*12)
+T1.agemix$Rel.dur.p1 <- as.numeric(difftime(DateCleaning(T1.agemix$End.rel.date.p1), 
+                                 DateCleaning(T1.agemix$Start.rel.date.p1),
+                                 units = "weeks"))
 
-T1.agemix$Rel.dur.p2 <- as.numeric((as.yearmon(DateCleaning(T1.agemix$End.rel.date.p2))-
-                                      as.yearmon(DateCleaning(T1.agemix$Start.rel.date.p2)))*12)
+T1.agemix$Rel.dur.p2 <- as.numeric(difftime(DateCleaning(T1.agemix$End.rel.date.p2), 
+                                 DateCleaning(T1.agemix$Start.rel.date.p2),
+                                 units = "weeks"))
 
-T1.agemix$Rel.dur.p3 <- as.numeric((as.yearmon(DateCleaning(T1.agemix$End.rel.date.p3))-
-                                      as.yearmon(DateCleaning(T1.agemix$Start.rel.date.p3)))*12)
+T1.agemix$Rel.dur.p3 <- as.numeric(difftime(DateCleaning(T1.agemix$End.rel.date.p3), 
+                                 DateCleaning(T1.agemix$Start.rel.date.p3),
+                                 units = "weeks"))
 
 ##################################################################################
 # An indicator was created to denote whether or not the relationship was 
 # ongoing at the time of the interview or ended. Those relationships that were 
 # ongoing had right-censored relationship durations
 
-T1.agemix$Ongoing.p1 <- as.factor(ifelse(format(T1.agemix$EnrollmentDate, "%Y-%m") == 
+T1.agemix$Rel.ended.p1 <- as.factor(ifelse(format(T1.agemix$EnrollmentDate, "%Y-%m") == 
                                  format(DateCleaning(T1.agemix$End.rel.date.p1), "%Y-%m"),
-                               1,0))
+                               0,1))
 
-T1.agemix$Ongoing.p2 <- as.factor(ifelse(format(T1.agemix$EnrollmentDate, "%Y-%m") == 
+T1.agemix$Rel.ended.p2 <- as.factor(ifelse(format(T1.agemix$EnrollmentDate, "%Y-%m") == 
                                  format(DateCleaning(T1.agemix$End.rel.date.p2), "%Y-%m"),
-                               1,0))
+                               0,1))
 
-T1.agemix$Ongoing.p3 <- as.factor(ifelse(format(T1.agemix$EnrollmentDate, "%Y-%m") == 
+T1.agemix$Rel.ended.p3 <- as.factor(ifelse(format(T1.agemix$EnrollmentDate, "%Y-%m") == 
                                  format(DateCleaning(T1.agemix$End.rel.date.p3), "%Y-%m"),
-                               1,0))
+                               0,1))
 
 ######################################################################################
 # computing age differences defined as the male partner's age minus the female 
@@ -106,6 +110,8 @@ T1.agemix$Age.diff.p3 <- ifelse(T1.agemix$Gender == "Male",
                                 T1.agemix$Age.res.p3-T1.agemix$Partner.age.p3,
                                 T1.agemix$Partner.age.p3 - T1.agemix$Age.res.p3)
 
+########################################################################################
+#T1.agemix <- subset(T1.agemix, Gender == "Male")
 # Save the dataframe
 save(T1.agemix, file = "T1.agemix.Rdata")
 

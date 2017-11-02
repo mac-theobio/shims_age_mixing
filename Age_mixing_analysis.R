@@ -3,7 +3,7 @@ library(ggplot2)
 library(dplyr)
 library(nlme)
 
-setwd("/Users/emanuel/Documents/shims_age_mixing")
+setwd("/Users/Emanuel/Desktop/shims_age_mixing-master")
 load("T1.agemix.Rdata")
 ##################################################################################################
 # We want to tidy the data frame by subsetting and converting it to long format
@@ -39,13 +39,13 @@ print(ggplot(na.exclude(DT.Agemix), aes(x=Participant.age, y=Partner.age))
 #################################################################################################
 # Fitting a linear mixed model
 # Remove all data from respondents younger than 15 years old
-# Subtract 15 from all respondent ages, so that “respondent.age.at.relationship.formation” is
+# Subtract 15 from all respondent ages, so that a respondent.age.at.relationship.formation” is
 # coded 0 for a man who started a relationship at age 15 years old.
 
 DT.Agemix.men <- na.exclude(DT.Agemix[which(Gender == "Male" & Participant.age >= 15),])
 DT.Agemix.men$Participant.age <- DT.Agemix.men$Participant.age - 15
 
-model <- lme(Partner.age~Participant.age,
+model <- lme(Partner.age~ Participant.age,
              data = DT.Agemix.men,
              method = "REML",
              weights = varPower(value = 0.5, form = ~Participant.age + 1),
@@ -81,15 +81,17 @@ p <- ggplot(DT.Agemix.men,aes(Participant.age,Partner.age)) +
       geom_point(size=3,color="black") +
       xlab("") +
       ylab("") +
-      scale_x_continuous(labels = function(x)x+15)
+      scale_x_continuous(labels = function(x)x+15) 
+
 
 subNum <- unique(DT.Agemix.men$Uid)
 
 for(i in 1:length(subNum)){
-  p <- p + geom_abline(intercept = params[i,1],slope = fixParam[2],color ="lightskyblue2")
+  p <- p + geom_abline(aes(intercept = params[i,1],slope = fixParam[2],color ="lightskyblue2"))
 }
 
 p <- p + geom_abline(intercept = fixParam[1],slope = fixParam[2],color = "blue",size=1.5)
+
 print(p)
 
 
@@ -103,6 +105,7 @@ expected.partner.age.person.i <- intercept + age * fixParam[2]
 
 UL95pred.interval <- expected.partner.age.person.i + 1.96 * within.sd
 LL95pred.interval <- expected.partner.age.person.i - 1.96 * within.sd
+
 
 
 
