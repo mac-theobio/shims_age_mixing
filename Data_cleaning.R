@@ -1,6 +1,5 @@
 library(readxl)
 library(dplyr)
-#library(zoo)
 
 setwd("/Users/Emanuel/Desktop/shims_age_mixing-master")
 source("Functions_for_SHIMS_study.R")
