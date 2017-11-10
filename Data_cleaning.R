@@ -1,10 +1,20 @@
-library(readxl)
-library(dplyr)
+# ==============
+# Load libraries
+# ==============
 
-setwd("/Users/Emanuel/Desktop/shims_age_mixing-master")
+library(tidyverse)
+library(readxl)
+
+# =======================
+# Source global functions
+# =======================
+
 source("Functions_for_SHIMS_study.R")
-#####################################################################################
-# Read the data
+
+# ================
+# Data importation
+# ================
+
 Sample.Baseline <- read_excel("SAMPLE_T1_2017-05-02_00-59-36.xlsx")
 
 # Eliminate spaces from variable names (old style)
@@ -14,6 +24,10 @@ names(Sample.Baseline) <- make.names(names(Sample.Baseline))
 freqlevels = c("never","sometimes","always")
 sexlevels = c("1","between 2-5","between 6-10","more than 10")
 partlevels = c("husband/wife","regular partner","casual partner")
+
+# ===============
+# Subset the data
+# ===============
 
 # Subset the data as you change the variable names and data types
 T1.agemix <- Sample.Baseline %>% transmute(Uid = Uid,
@@ -45,7 +59,10 @@ T1.agemix <- Sample.Baseline %>% transmute(Uid = Uid,
                                            Partner.type.p3 = ordered(RQp3psr,levels = partlevels)
                                            )
 
-######################################################################################
+# ====================
+# Create new variables
+# ====================
+
 # create a variable for age of participant when he/she had sexual rel started with 
 # partner 1
 
@@ -61,7 +78,7 @@ T1.agemix$Age.res.p3 <- AgeResAtRelOnset(currentage = T1.agemix$Age,
                                          currentdate = T1.agemix$EnrollmentDate,
                                          daterel = DateCleaning(T1.agemix$Start.rel.date.p3))
 
-######################################################################################
+
 # create a variable for relationship duration [weeks]
 
 T1.agemix$Rel.dur.p1 <- as.numeric(difftime(DateCleaning(T1.agemix$End.rel.date.p1), 
@@ -76,7 +93,7 @@ T1.agemix$Rel.dur.p3 <- as.numeric(difftime(DateCleaning(T1.agemix$End.rel.date.
                                  DateCleaning(T1.agemix$Start.rel.date.p3),
                                  units = "weeks"))
 
-##################################################################################
+
 # An indicator was created to denote whether or not the relationship was 
 # ongoing at the time of the interview or ended. Those relationships that were 
 # ongoing had right-censored relationship durations
@@ -93,7 +110,7 @@ T1.agemix$Rel.ended.p3 <- as.factor(ifelse(format(T1.agemix$EnrollmentDate, "%Y-
                                  format(DateCleaning(T1.agemix$End.rel.date.p3), "%Y-%m"),
                                0,1))
 
-######################################################################################
+
 # computing age differences defined as the male partner's age minus the female 
 # partner's age
 
@@ -109,7 +126,10 @@ T1.agemix$Age.diff.p3 <- ifelse(T1.agemix$Gender == "Male",
                                 T1.agemix$Age.res.p3-T1.agemix$Partner.age.p3,
                                 T1.agemix$Partner.age.p3 - T1.agemix$Age.res.p3)
 
-########################################################################################
+# ============================
+# Save the data as an R object
+# ============================
+
 #T1.agemix <- subset(T1.agemix, Gender == "Male")
 # Save the dataframe
 save(T1.agemix, file = "T1.agemix.Rdata")
