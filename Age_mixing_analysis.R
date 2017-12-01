@@ -3,7 +3,6 @@ library(ggplot2)
 library(dplyr)
 library(nlme)
 
-setwd("/Users/Emanuel/Desktop/shims_age_mixing-master")
 load("T1.agemix.Rdata")
 ##################################################################################################
 # We want to tidy the data frame by subsetting and converting it to long format
@@ -48,7 +47,7 @@ DT.Agemix.men$Participant.age <- DT.Agemix.men$Participant.age - 15
 model <- lme(Partner.age~ Participant.age,
              data = DT.Agemix.men,
              method = "REML",
-             weights = varPower(value = 0.5, form = ~Participant.age + 1),
+             #weights = varPower(value = 0.5, form = ~Participant.age + 1),
              random = ~1|Uid)
 
 summary(model)
@@ -70,49 +69,79 @@ between.var <- VarCorr(model)[1] %>% as.numeric()
 # Extract residual variance = within-individual variance
 within.var <- VarCorr(model)[2] %>% as.numeric()
 
-#####################################################################################################
-# visualizing output
-
-fixParam <- fixef(model)
-ranParam <- ranef(model)
-params <- ranParam[1]+fixParam[1]
-
-p <- ggplot(DT.Agemix.men,aes(Participant.age,Partner.age)) +
-      geom_point(size=3,color="black") +
-      xlab("") +
-      ylab("") +
-      scale_x_continuous(labels = function(x)x+15) 
 
 
-subNum <- unique(DT.Agemix.men$Uid)
+# ==================================================
+# Linear mixed effects model for age mixing analysis
+# ==================================================
 
-for(i in 1:length(subNum)){
-  p <- p + geom_abline(aes(intercept = params[i,1],slope = fixParam[2],color ="lightskyblue2"))
-}
+# ==============
+# load libraries
+# ==============
+library(tidyverse)
+library(lme4)
+library(data.table)
+# ==============
+# load data
+# ==============
+load("T1.agemix.Rdata")
 
-p <- p + geom_abline(intercept = fixParam[1],slope = fixParam[2],color = "blue",size=1.5)
+# ====================
+# Data transformations
+# ====================
 
-print(p)
+# subset
+T1.agemixing <- T1.agemix %>% transmute(Uid,
+                                        Gender,
+                                        Age.res.p1,
+                                        Age.res.p2,
+                                        Age.res.p3,
+                                        Partner.age.p1,
+                                        Partner.age.p2,
+                                        Partner.age.p3,
+                                        Partner.type.p1,
+                                        Partner.type.p2,
+                                        Partner.type.p3)
+
+# convert to long format
+
+setDT(T1.agemixing) #convert to a data.table for easy manipulation
+
+DT.Agemix <- T1.agemixing %>% melt( measure = patterns("^Age.res", "^Partner.age", "^Partner.type"),
+                                   value.name = c("Participant.age", "Partner.age", "Partner.type"),
+                                   variable.name = "Partner") 
+as.tibble(DT.Agemix)
+
+# tidy dataset
+
+DT.Agemix.men <- DT.Agemix %>% 
+  filter(Gender == "Male" & Participant.age >= 15) %>% 
+  mutate(Participant.age = Participant.age - 15) %>% 
+  drop_na()
+
+hist(DT.Agemix.men$Partner.age)
+# =======================
+# linear mixed model
+# =======================
+
+agemix.model <- lmer(Partner.age ~ Participant.age + Partner.type + (1|Uid),
+                     data = DT.Agemix.men,
+                     REML = FALSE)
+
+summary(agemix.model)
+
+coef(agemix.model)
+
+plot(agemix.model)
+plot(agemix.model,Partner.age ~ fitted(.))
 
 
+agemix.model.null <- lmer(Partner.age ~  Participant.age + (1|Uid),
+                     data = DT.Agemix.men,
+                     REML = FALSE)
 
-##### confidence intervals for an individual
-age <- seq(15,50,0.1)
-within.sd <- sqrt(within.var * (1+(age-15))^power)
+summary(agemix.model.null)
 
-
-expected.partner.age.person.i <- intercept + age * fixParam[2]
-
-UL95pred.interval <- expected.partner.age.person.i + 1.96 * within.sd
-LL95pred.interval <- expected.partner.age.person.i - 1.96 * within.sd
-
-
-
-
-
-
-
-
-
-
-
+anova(agemix.model.null, agemix.model)
+# adding partner type does not improve the model
+# random slope not possible because of very few observations per subject
