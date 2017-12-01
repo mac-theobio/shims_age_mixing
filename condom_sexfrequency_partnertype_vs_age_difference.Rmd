@@ -1,0 +1,211 @@
+---
+title: \textbf{Condom use, sex frequency, partner type vs age difference}
+author: "E. Dominic,  R. Beauclair, J. Dushoff, W. Delva"
+#date: "08 September 2017"
+output: pdf_document
+fontsize: 11pt
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(data.table)
+library(tidyverse)
+library(ordinal)    #for cumulative link mixed models
+library(splines)    #or splines in models
+library(survival)   #for cox ph model
+library(effects)    #to do effects plots
+library(cowplot)    #plot_grid
+library(dotwhisker) #make dot whisker plots
+library(broom)      #convert objects into tidy data frame: tidy()
+library(visreg)     #getting "contrast" hazard ratios
+library(nlme)       #fitting non linear mixed effects models
+#install_github("baptiste/egg")
+library(egg)
+
+source("Functions_for_SHIMS_study.R")
+load("T1.agemix.Rdata")
+
+```
+
+```{r TIDY_DATAFRAME, echo=FALSE}
+# ===================
+# Tidy the dataframe 
+# ===================
+# tidy the data frame for age mixing analysis
+T1.agemixing <- T1.agemix %>% transmute(Uid,
+                                        Gender,
+                                        Age.res.p1,
+                                        Age.res.p2,
+                                        Age.res.p3,
+                                        Partner.age.p1,
+                                        Partner.age.p2,
+                                        Partner.age.p3)
+
+setDT(T1.agemixing) #convert to a data.table for easy manipulation
+
+DT.Agemix = T1.agemixing %>% melt( measure = patterns("^Age.res", "^Partner.age"),
+                                   value.name = c("Age.participant", "Partner.age"),
+                                   variable.name = "Partner")
+
+DT.Agemix.men <- na.exclude(DT.Agemix[which(Gender == "Male" & Age.participant >= 15),])
+DT.Agemix.men$Age.participant <- DT.Agemix.men$Age.participant - 15
+
+# We want to tidy the data frame by subsetting and converting it 
+# to long format so that each row represents a relationship.
+
+T1.reldata <- T1.agemix %>% transmute(Uid,
+                                      Gender,
+                                      No.partners,
+                                      Age.res.p1,
+                                      Age.res.p2,
+                                      Age.res.p3,
+                                      Age.diff.p1,
+                                      Age.diff.p2,
+                                      Age.diff.p3,
+                                      Condom.freq.p1,
+                                      Condom.freq.p2,
+                                      Condom.freq.p3,
+                                      Sex.freq.p1,
+                                      Sex.freq.p2,
+                                      Sex.freq.p3,
+                                      Partner.type.p1,
+                                      Partner.type.p2,
+                                      Partner.type.p3,
+                                      Rel.dur.p1,
+                                      Rel.dur.p2,
+                                      Rel.dur.p3,
+                                      Rel.ended.p1,
+                                      Rel.ended.p2,
+                                      Rel.ended.p3,
+                                      Money.gifts.p1,
+                                      Money.gifts.p2,
+                                      Money.gifts.p3)
+# code REF as NA
+T1.reldata[T1.reldata == "REF"] <- NA
+
+setDT(T1.reldata) #convert to a data.table for easy manipulation
+
+DT.reldata <-  T1.reldata %>% 
+  melt(measure = patterns("^Age.res", "^Age.diff",
+                          "^Condom.freq", "^Sex.freq",
+                          "^Partner.type", "^Rel.dur",
+                          "^Rel.ended", "^Money.gifts"), 
+       value.name = c("Age.participant", "Age.difference",
+                      "Condom.frequency", "Sex.frequency",
+                      "Partner.type", "Relationship.dur",
+                      "Rel.ended", "Money.gifts"),  
+      variable.name = "Partner"
+        )
+
+
+# ===========================================================
+# Removing respondents who did not report relationship 1,2,3
+# ===========================================================
+
+DT.rel.men <- na.exclude(subset(DT.reldata, Gender == "Male" & Age.participant >= 15))
+#DT.rel.men <- na.exclude(subset(DT.reldata, Gender == "Male"))
+
+
+# ordering levels
+freqlevels = c("never","sometimes","always")
+sexlevels = c("1","between 2-5","between 6-10","more than 10")
+partlevels = c("husband/wife","regular partner","casual partner")
+
+DT.reldata.men <- DT.rel.men %>% 
+  transmute(Uid = as.factor(Uid),
+            #Gender,
+            No.partners,
+            Partner,
+            Age.participant,
+            Age.difference,
+            Relationship.dur,
+            Rel.ended = as.factor(Rel.ended),
+            Condom.frequency = ordered(Condom.frequency, levels = freqlevels),
+            Sex.frequency = ordered(Sex.frequency, levels = sexlevels),
+            Partner.type = ordered(Partner.type, levels = partlevels),
+            Money.gifts = ordered(Money.gifts, levels = freqlevels)
+  )
+  
+#head(DT.reldata.men)
+```
+
+First we deal with condom use.
+We start by fitting cumulative logit model and running diagnostics
+
+```{r Condom Use Models}
+condom.m0 <- clm(Condom.frequency ~ 1,
+                 data = DT.reldata.men,
+                 link = "logit")
+
+
+condom.m1 <- clm(Condom.frequency ~ Age.difference,
+                 data = DT.reldata.men,
+                 link = "logit")
+
+summary(condom.m1)
+
+
+condom.m2 <- clm(Condom.frequency ~ Age.difference + No.partners,
+                 data = DT.reldata.men,
+                 link = "logit")
+
+summary(condom.m2)
+
+condom.m3 <- clm(Condom.frequency ~ Age.difference * No.partners,
+                 data = DT.reldata.men,
+                 link = "logit")
+
+summary(condom.m3)
+
+# building a model
+drop1(condom.m2, test = "Chi")
+
+add1(condom.m0, scope = ~ Age.difference + No.partners, test = "Chi")
+
+# compare models
+anova(condom.m1,condom.m2)
+
+
+# confidence intervals
+confint(condom.m1, type = "Wald")
+confint(condom.m1, type = "profile") #profile is the default
+
+# inspecting the likelihood function
+slice.condom.m1 <- slice(condom.m1, lambda = 5) 
+par(mfrow = c(2, 3)) 
+plot(slice.condom.m1)
+
+slice.condom.m1 <- slice(condom.m1, lambda = 1e-5) 
+par(mfrow = c(2, 3)) 
+plot(slice.condom.m1)
+```
+
+condom model 1
+-1.1583 is the log-odds of falling into or below category 1 ("never") vs 2 ("sometimes") when age difference = 0.
+0.5538 is the log-odds of falling into or below category 2 ("sometimes") vs 3 ("always") when age difference = 0.
+The lower the value of age difference, the higher the probability of the response falling in the lower level i.e no condom use
+-0.04528 is the decrease in log-odds of falling into or above any category associated with a one-unit increase in age difference
+http://data.library.virginia.edu/fitting-and-interpreting-a-proportional-odds-model/
+
+
+condom model 2
+The number of partners is not a significant predictor
+
+condom model 3
+Interaction term does not help to improve the model
+
+Our best model is condom.m1
+
+
+For this model we see that the log-likelihood function is nicely quadratic for the regression
+and threshold parameters.
+We observe that 1) the model has converged, 2) from
+inspection of the horizontal axis all parameters estimates are correct to at least six decimals,
+3) the quadratic approximation is indistinguishable from the log-likelihood at this scale and 4)
+from the vertical axis the log-likelihood value is determined accurately to at least 12 digits.
+
+```{r Sex frequency}
+
+
+```
