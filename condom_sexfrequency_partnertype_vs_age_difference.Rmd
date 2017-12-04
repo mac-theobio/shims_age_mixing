@@ -134,6 +134,10 @@ First we deal with condom use.
 We start by fitting cumulative logit model and running diagnostics
 
 ```{r Condom Use Models}
+# frequncies of the condom use levels
+ggplot(data = DT.reldata.men) +
+  geom_bar(aes(Condom.frequency))
+
 condom.m0 <- clm(Condom.frequency ~ 1,
                  data = DT.reldata.men,
                  link = "logit")
@@ -145,6 +149,14 @@ condom.m1 <- clm(Condom.frequency ~ Age.difference,
 
 summary(condom.m1)
 
+# use a different library MASS and you get exactly the same fit as the clmm from ordinal
+# library(MASS)
+# 
+# condom.massm1 <- polr(Condom.frequency ~ Age.difference,
+#                  data = DT.reldata.men,
+#                  method="logistic")
+# 
+# summary(condom.massm1)
 
 condom.m2 <- clm(Condom.frequency ~ Age.difference + No.partners,
                  data = DT.reldata.men,
@@ -182,12 +194,13 @@ plot(slice.condom.m1)
 ```
 
 condom model 1
--1.1583 is the log-odds of falling into or below category 1 ("never") vs 2 ("sometimes") when age difference = 0.
+-1.1583 is the log-odds of falling into or below category 1 ("never") vs 2/3 ("sometimes") when age difference = 0.
 0.5538 is the log-odds of falling into or below category 2 ("sometimes") vs 3 ("always") when age difference = 0.
 The lower the value of age difference, the higher the probability of the response falling in the lower level i.e no condom use
 -0.04528 is the decrease in log-odds of falling into or above any category associated with a one-unit increase in age difference
 http://data.library.virginia.edu/fitting-and-interpreting-a-proportional-odds-model/
 
+The odds of being at or below a particular condom use level versus being above that level decreased by a factor of exp(-0.04528) = 0.956 with a one unit increase in the age difference.(proportional odds models articles have good interpretations)
 
 condom model 2
 The number of partners is not a significant predictor
