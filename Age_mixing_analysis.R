@@ -81,6 +81,7 @@ within.var <- VarCorr(model)[2] %>% as.numeric()
 library(tidyverse)
 library(lme4)
 library(data.table)
+library(lattice) #xyplot
 # ==============
 # load data
 # ==============
@@ -120,28 +121,94 @@ DT.Agemix.men <- DT.Agemix %>%
   drop_na()
 
 hist(DT.Agemix.men$Partner.age)
+
+length(unique(DT.Agemix.men$Uid)) # to obtain the number of unique participants which will form the clusters
+
 # =======================
-# linear mixed model
+# Random intercept model
 # =======================
 
-agemix.model <- lmer(Partner.age ~ Participant.age + Partner.type + (1|Uid),
-                     data = DT.Agemix.men,
-                     REML = FALSE)
+agemix.model.1 <- lmer(Partner.age ~  Participant.age + (1|Uid),
+                       data = DT.Agemix.men)
 
-summary(agemix.model)
+summary(agemix.model.1)
 
-coef(agemix.model)
+ranef(agemix.model.1) # to obtain the actual bj for all the groups
 
-plot(agemix.model)
+fitted(agemix.model.1) # to obtain the fitted values
+AIC(agemix.model.1)
+# Parameter specific p-values
+# to estimate the p-value for the slope when you have very large data set(thousands) we can obtain an upper bound
+# for the degrees of freedom as number of observations M- number of fixed-effects parameters (2).
+
+2 * (1-pt(abs(8.06), 240-2)) # very small p value. participant age is a significant predictor
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+coef(agemix.model.1) # to obtain the coefficient for each participant
+
+
+# to fit using Maximum likelihood use update
+agemix.model.1ML <- update(agemix.model.1, REML = FALSE)
+summary(agemix.model.1ML)
+
+# assessing the variability of the parameters
+pr01 <- profile(agemix.model.1ML)
+xyplot(pr01, aspect = 1.3, layout = c(4,1)) #profile zeta plot
+# The vertical lines in the panels delimit the 50%, 80%, 90%, 95% and 99%
+# confidence intervals derived from the test statistic.
+# To get the actual confidence intervals use confint()
+confint(pr01) 
+
+xyplot(pr01, aspect = 1.3, layout = c(4,1), absVal = TRUE) # plot of abs of zeta to visualize confidence intervals easily
+
+splom(pr01)
+
+# a convenient way to plot the random eﬀects with 95% conﬁdence intervals along with the estimated random eﬀects.
+dotplot.ranef.mer(ranef(agemix.model.1, condVar=T),
+                  ylab = "Participant ID",
+                  scales = list(y = list(draw = FALSE)))
+#or
+qqmath(ranef(agemix.model.1, condVar=TRUE))
+
+ggplot(data = DT.Agemix.men, aes(x = Participant.age, y = Partner.age)) +
+  geom_point()+
+  theme_set(theme_bw()) +
+  geom_abline(intercept = fixef(agemix.model.1)[1], slope = fixef(agemix.model.1)[2], col = "red")+
+  geom_abline(intercept = coef(agemix.model.1)$Uid["0000208",]$`(Intercept)`,
+              slope = coef(agemix.model.1)$Uid["0000208",]$Participant.age, 
+              col = "blue") +
+  geom_abline(intercept = coef(agemix.model.1)$Uid["0012036",]$`(Intercept)`,
+              slope = coef(agemix.model.1)$Uid["0012036",]$Participant.age, 
+              col = "green")
+
+
+#xyplot(Partner.age ~ Participant.age | Uid,data=DT.Agemix.men)
+
+plot(agemix.model.1)
 plot(agemix.model,Partner.age ~ fitted(.))
 
+agemix.model.2 <- lmer(Partner.age ~ Participant.age + Partner.type + (1|Uid),
+                     data = DT.Agemix.men)
 
-agemix.model.null <- lmer(Partner.age ~  Participant.age + (1|Uid),
-                     data = DT.Agemix.men,
-                     REML = FALSE)
+summary(agemix.model.2)
 
-summary(agemix.model.null)
+agemix.model.2ML <- update(agemix.model.2, REML = FALSE)
 
-anova(agemix.model.null, agemix.model)
+anova(agemix.model.1ML, agemix.model.2ML)
 # adding partner type does not improve the model
 # random slope not possible because of very few observations per subject
