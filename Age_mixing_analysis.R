@@ -55,51 +55,6 @@ DT.Agemix.men <- DT.Agemix %>%
 hist(DT.Agemix.men$Partner.age)
 
 n_distinct(DT.Agemix.men$Uid) # to obtain the number of unique participants which will form the clusters
-<<<<<<< HEAD
-
-# men who reported more than 1 partner
-sum(table(DT.Agemix.men$Uid)>1)
-
-# =======================
-# Random intercept model
-# =======================
-agemix.model.nlme <- lme(Partner.age~ Participant.age, 
-                         data = DT.Agemix.men,method = "REML",
-                         #weights = varPower(value = 0.5, form = ~Participant.age + 1),
-                         random = ~1|Uid)
-
-summary(agemix.model.nlme)
-
-
-agemix.model.1 <- lmer(Partner.age ~  Participant.age + (1|Uid),
-                       data = DT.Agemix.men)
-
-summary(agemix.model.1)
-
-ranef(agemix.model.1) # to obtain the actual bj for all the groups
-
-fitted(agemix.model.1) # to obtain the fitted values
-
-AIC(agemix.model.1)
-
-coef(agemix.model.1) # to obtain the coefficient for each participant
-
-# to fit using Maximum likelihood use update
-agemix.model.1ML <- update(agemix.model.1, REML = FALSE)
-summary(agemix.model.1ML)
-
-# assessing the variability of the parameters by profilling the fitted model
-pr01 <- profile(agemix.model.1ML)
-xyplot(pr01, aspect = 1.3, layout = c(4,1)) #profile zeta plot
-# The vertical lines in the panels delimit the 50%, 80%, 90%, 95% and 99%
-# confidence intervals derived from the test statistic.
-# To get the actual confidence intervals use confint()
-confint(pr01) 
-
-xyplot(pr01, aspect = 1.3, layout = c(4,1), absVal = TRUE) # plot of abs of zeta to visualize confidence intervals easily
-
-splom(pr01)
-=======
 
 # men who reported more than 1 partner
 sum(table(DT.Agemix.men$Uid)>1)
@@ -147,8 +102,6 @@ splom(pr01)
 library(effects)
 plot(allEffects(agemix.model.1),rug=F)
 
->>>>>>> 567bbe95aab8dc946b9c25e3f69e8da1c7f9d969
-
 # a convenient way to plot the random eﬀects with 95% conﬁdence intervals along with the estimated random eﬀects.
 dotplot(ranef(agemix.model.1, condVar=T),
         ylab = "Participant ID",
@@ -178,24 +131,23 @@ agemix.model.2ML <- update(agemix.model.2, REML = FALSE)
 anova(agemix.model.1ML, agemix.model.2ML)
 # adding partner type does not improve the model
 
-<<<<<<< HEAD
+
 # ==================
 # Heteroscedasticity
 # ==================
-=======
->>>>>>> 567bbe95aab8dc946b9c25e3f69e8da1c7f9d969
-# heteroskedastic errors in nlme
-# plotting residuals against the fitted values - detecting heteroskedasticity
+
+# heteroscedastic errors in nlme
+# plotting residuals against the fitted values - detecting heteroscedasticity
 plot(agemix.model.nlme, residuals(.) ~ fitted(.), abline = 0 )
 
-# check why there is heteroskedasticity
+# check why there is heteroscedasticity
 plot(agemix.model.nlme, residuals(.) ~ Participant.age, abline = 0)
 # confirms that the within group variability increases with participant age 
 # var(eij) increases when participant age increases
 
 agemix.model.nlme.hetero <- lme(Partner.age~ Participant.age, 
                                  data = DT.Agemix.men,method = "REML",
-                                 weights = varPower(value = 0, # this starting point is the homoskedastic form
+                                 weights = varPower(value = 0, # this starting point is the homoscedastic form
                                                     form = ~Participant.age),
                                  random = ~1|Uid)
 
@@ -208,7 +160,7 @@ agemix.model.nlme.hetero1 <- lme(Partner.age~ Participant.age,
 
 summary(agemix.model.nlme.hetero1)
 
-# test the significance of the heteroskedastic model. heteroskedastic model is much better 
+# test the significance of the heteroscedastic model. heteroscedastic model is much better 
 # as shown by the significant decrease in AIC.
 anova(agemix.model.nlme.hetero,agemix.model.nlme.hetero1)
 
