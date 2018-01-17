@@ -1,76 +1,3 @@
-library(data.table)
-library(ggplot2)
-library(dplyr)
-library(nlme)
-
-load("T1.agemix.Rdata")
-##################################################################################################
-# We want to tidy the data frame by subsetting and converting it to long format
-
-T1.agemixing <- T1.agemix %>% transmute(Uid,
-                                        Gender,
-                                        Age.res.p1,
-                                        Age.res.p2,
-                                        Age.res.p3,
-                                        Partner.age.p1,
-                                        Partner.age.p2,
-                                        Partner.age.p3)
-
-setDT(T1.agemixing) #convert to a data.table for easy manipulation
-
-DT.Agemix = T1.agemixing %>% melt( measure = patterns("^Age.res", "^Partner.age"),
-                                   value.name = c("Participant.age", "Partner.age"),
-                                   variable.name = "Partner")
-
-##################################################################################################
-# Scatterplot of partner age vs participant age
-theme_set(theme_bw())
-
-print(ggplot(na.exclude(DT.Agemix), aes(x=Participant.age, y=Partner.age))
-      + geom_point()
-      + facet_wrap(~Gender)
-      + coord_equal()
-      + xlab("")
-      + ylab("")
-      #+ ggtitle("Partner vs Participant age at onset of sexual relationship")
-      )
-
-#################################################################################################
-# Fitting a linear mixed model
-# Remove all data from respondents younger than 15 years old
-# Subtract 15 from all respondent ages, so that a respondent.age.at.relationship.formation” is
-# coded 0 for a man who started a relationship at age 15 years old.
-
-DT.Agemix.men <- na.exclude(DT.Agemix[which(Gender == "Male" & Participant.age >= 15),])
-DT.Agemix.men$Participant.age <- DT.Agemix.men$Participant.age - 15
-
-model <- lme(Partner.age~ Participant.age,
-             data = DT.Agemix.men,
-             method = "REML",
-             #weights = varPower(value = 0.5, form = ~Participant.age + 1),
-             random = ~1|Uid)
-
-summary(model)
-
-# Extract slope = Beta-coefficent of the fixed effect from model
-slope <- model$coefficients$fixed[2]
-
-# Extract population intercepts = expected age of partner for a man starting a relationship at age 15
-intercept <- model$coefficients$fixed[1]
-
-# Extract power coefficient of variance function
-power <- (attributes(model$apVar)$Pars["varStruct.power"])
-power.lowerbound <- intervals(model)$varStruct[,1]
-power.upperbound <- intervals(model)$varStruct[,3]
-
-# Extract between-individual variance
-between.var <- VarCorr(model)[1] %>% as.numeric()
-
-# Extract residual variance = within-individual variance
-within.var <- VarCorr(model)[2] %>% as.numeric()
-
-
-
 # ==================================================
 # Linear mixed effects model for age mixing analysis
 # ==================================================
@@ -82,6 +9,7 @@ library(tidyverse)
 library(lme4)
 library(data.table)
 library(lattice) #xyplot
+library(nlme)
 # ==============
 # load data
 # ==============
@@ -114,19 +42,33 @@ DT.Agemix <- T1.agemixing %>% melt( measure = patterns("^Age.res", "^Partner.age
 as.tibble(DT.Agemix)
 
 # tidy dataset
+# Remove all data from respondents younger than 15 years old
+# Subtract 15 from all respondent ages, so that a respondent.age.at.relationship.formation” is
+# coded 0 for a man who started a relationship at age 15 years old.
 
 DT.Agemix.men <- DT.Agemix %>% 
   filter(Gender == "Male" & Participant.age >= 15) %>% 
   mutate(Participant.age = Participant.age - 15) %>% 
   drop_na()
 
+# the distribution of the partner age: the response
 hist(DT.Agemix.men$Partner.age)
 
-length(unique(DT.Agemix.men$Uid)) # to obtain the number of unique participants which will form the clusters
+n_distinct(DT.Agemix.men$Uid) # to obtain the number of unique participants which will form the clusters
+
+# men who reported more than 1 partner
+sum(table(DT.Agemix.men$Uid)>1)
 
 # =======================
 # Random intercept model
 # =======================
+agemix.model.nlme <- lme(Partner.age~ Participant.age, 
+                         data = DT.Agemix.men,method = "REML",
+                         #weights = varPower(value = 0.5, form = ~Participant.age + 1),
+                         random = ~1|Uid)
+
+summary(agemix.model.nlme)
+
 
 agemix.model.1 <- lmer(Partner.age ~  Participant.age + (1|Uid),
                        data = DT.Agemix.men)
@@ -136,37 +78,16 @@ summary(agemix.model.1)
 ranef(agemix.model.1) # to obtain the actual bj for all the groups
 
 fitted(agemix.model.1) # to obtain the fitted values
+
 AIC(agemix.model.1)
-# Parameter specific p-values
-# to estimate the p-value for the slope when you have very large data set(thousands) we can obtain an upper bound
-# for the degrees of freedom as number of observations M- number of fixed-effects parameters (2).
-
-2 * (1-pt(abs(8.06), 240-2)) # very small p value. participant age is a significant predictor
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 coef(agemix.model.1) # to obtain the coefficient for each participant
-
 
 # to fit using Maximum likelihood use update
 agemix.model.1ML <- update(agemix.model.1, REML = FALSE)
 summary(agemix.model.1ML)
 
-# assessing the variability of the parameters
+# assessing the variability of the parameters by profilling the fitted model
 pr01 <- profile(agemix.model.1ML)
 xyplot(pr01, aspect = 1.3, layout = c(4,1)) #profile zeta plot
 # The vertical lines in the panels delimit the 50%, 80%, 90%, 95% and 99%
@@ -178,10 +99,14 @@ xyplot(pr01, aspect = 1.3, layout = c(4,1), absVal = TRUE) # plot of abs of zeta
 
 splom(pr01)
 
+library(effects)
+plot(allEffects(agemix.model.1),rug=F)
+
+
 # a convenient way to plot the random eﬀects with 95% conﬁdence intervals along with the estimated random eﬀects.
-dotplot.ranef.mer(ranef(agemix.model.1, condVar=T),
-                  ylab = "Participant ID",
-                  scales = list(y = list(draw = FALSE)))
+dotplot(ranef(agemix.model.1, condVar=T),
+        ylab = "Participant ID",
+        scales = list(y = list(draw = FALSE)))
 #or
 qqmath(ranef(agemix.model.1, condVar=TRUE))
 
@@ -197,11 +122,6 @@ ggplot(data = DT.Agemix.men, aes(x = Participant.age, y = Partner.age)) +
               col = "green")
 
 
-#xyplot(Partner.age ~ Participant.age | Uid,data=DT.Agemix.men)
-
-plot(agemix.model.1)
-plot(agemix.model,Partner.age ~ fitted(.))
-
 agemix.model.2 <- lmer(Partner.age ~ Participant.age + Partner.type + (1|Uid),
                      data = DT.Agemix.men)
 
@@ -211,4 +131,41 @@ agemix.model.2ML <- update(agemix.model.2, REML = FALSE)
 
 anova(agemix.model.1ML, agemix.model.2ML)
 # adding partner type does not improve the model
-# random slope not possible because of very few observations per subject
+
+# heteroskedastic errors in nlme
+# plotting residuals against the fitted values - detecting heteroskedasticity
+plot(agemix.model.nlme, residuals(.) ~ fitted(.), abline = 0 )
+
+# check why there is heteroskedasticity
+plot(agemix.model.nlme, residuals(.) ~ Participant.age, abline = 0)
+# confirms that the within group variability increases with participant age 
+# var(eij) increases when participant age increases
+
+agemix.model.nlme.hetero <- lme(Partner.age~ Participant.age, 
+                                 data = DT.Agemix.men,method = "REML",
+                                 weights = varPower(value = 0, # this starting point is the homoskedastic form
+                                                    form = ~Participant.age),
+                                 random = ~1|Uid)
+
+summary(agemix.model.nlme.hetero)
+
+agemix.model.nlme.hetero1 <- lme(Partner.age~ Participant.age, 
+                            data = DT.Agemix.men,method = "REML",
+                            weights = varConstPower(form = ~Participant.age),
+                            random = ~1|Uid)
+
+summary(agemix.model.nlme.hetero1)
+
+# test the significance of the heteroskedastic model. heteroskedastic model is much better 
+# as shown by the significant decrease in AIC.
+anova(agemix.model.nlme.hetero,agemix.model.nlme.hetero1)
+
+# plot the standardized residuals shows a reasonably homogeneous pattern of the variability
+# of the residuals
+
+plot(agemix.model.nlme.hetero, resid(., type = "normalized") ~ Participant.age, abline = 0)
+plot(agemix.model.nlme.hetero1, resid(., type = "normalized") ~ Participant.age, abline = 0)
+# assess the variability of the variance parameter estimate
+intervals(agemix.model.nlme.hetero1)
+
+
