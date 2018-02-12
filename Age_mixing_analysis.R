@@ -131,14 +131,10 @@ agemix.model.2ML <- update(agemix.model.2, REML = FALSE)
 anova(agemix.model.1ML, agemix.model.2ML)
 # adding partner type does not improve the model
 
-<<<<<<< HEAD
-=======
-
 # ==================
 # Heteroscedasticity
 # ==================
 
->>>>>>> dbad514df8659dc92043e86bcc994e28d9a96065
 # heteroscedastic errors in nlme
 # plotting residuals against the fitted values - detecting heteroscedasticity
 plot(agemix.model.nlme, residuals(.) ~ fitted(.), abline = 0 )
