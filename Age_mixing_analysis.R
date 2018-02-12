@@ -132,11 +132,11 @@ agemix.model.2ML <- update(agemix.model.2, REML = FALSE)
 anova(agemix.model.1ML, agemix.model.2ML)
 # adding partner type does not improve the model
 
-# heteroskedastic errors in nlme
-# plotting residuals against the fitted values - detecting heteroskedasticity
+# heteroscedastic errors in nlme
+# plotting residuals against the fitted values - detecting heteroscedasticity
 plot(agemix.model.nlme, residuals(.) ~ fitted(.), abline = 0 )
 
-# check why there is heteroskedasticity
+# check why there is heteroscedasticity
 plot(agemix.model.nlme, residuals(.) ~ Participant.age, abline = 0)
 # confirms that the within group variability increases with participant age 
 # var(eij) increases when participant age increases
@@ -156,7 +156,7 @@ agemix.model.nlme.hetero1 <- lme(Partner.age~ Participant.age,
 
 summary(agemix.model.nlme.hetero1)
 
-# test the significance of the heteroskedastic model. heteroskedastic model is much better 
+# test the significance of the heteroscedastic model. heteroscedastic model is much better 
 # as shown by the significant decrease in AIC.
 anova(agemix.model.nlme.hetero,agemix.model.nlme.hetero1)
 
