@@ -102,7 +102,6 @@ splom(pr01)
 library(effects)
 plot(allEffects(agemix.model.1),rug=F)
 
-
 # a convenient way to plot the random eﬀects with 95% conﬁdence intervals along with the estimated random eﬀects.
 dotplot(ranef(agemix.model.1, condVar=T),
         ylab = "Participant ID",
@@ -132,6 +131,14 @@ agemix.model.2ML <- update(agemix.model.2, REML = FALSE)
 anova(agemix.model.1ML, agemix.model.2ML)
 # adding partner type does not improve the model
 
+<<<<<<< HEAD
+=======
+
+# ==================
+# Heteroscedasticity
+# ==================
+
+>>>>>>> dbad514df8659dc92043e86bcc994e28d9a96065
 # heteroscedastic errors in nlme
 # plotting residuals against the fitted values - detecting heteroscedasticity
 plot(agemix.model.nlme, residuals(.) ~ fitted(.), abline = 0 )
@@ -143,7 +150,7 @@ plot(agemix.model.nlme, residuals(.) ~ Participant.age, abline = 0)
 
 agemix.model.nlme.hetero <- lme(Partner.age~ Participant.age, 
                                  data = DT.Agemix.men,method = "REML",
-                                 weights = varPower(value = 0, # this starting point is the homoskedastic form
+                                 weights = varPower(value = 0, # this starting point is the homoscedastic form
                                                     form = ~Participant.age),
                                  random = ~1|Uid)
 
