@@ -9,7 +9,7 @@ library(tidyverse)
 library(lme4)
 library(data.table)
 library(lattice) #xyplot
-library(nlme)
+library(nlme) # fitting lmm
 # ==============
 # load data
 # ==============
