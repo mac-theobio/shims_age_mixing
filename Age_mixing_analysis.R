@@ -123,6 +123,15 @@ agemix.model.2nlmeML <- update(agemix.model.2nlme, method = "ML")
 anova(agemix.model.nlmeML, agemix.model.2nlmeML)
 # adding partner type does not improve the model
 
+# fit a marginal model using gls
+agemix.model.gls <- gls(Partner.age~ Participant.age, 
+                        data = DT.Agemix.men)
+
+summary(agemix.model.gls)
+
+# do a likelihood ratio test 
+anova(agemix.model.gls, agemix.model.nlme)
+# the result suggests that random participant effect should be retained (P < 0.05)
 # ==================
 # Heteroscedasticity
 # ==================
