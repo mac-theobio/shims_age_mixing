@@ -13,7 +13,7 @@ library(nlme) # fitting lmm
 # load data
 # ==============
 load("T1.agemix.Rdata")
-
+theme_set(theme_bw()) # set global plot theme
 # ====================
 # Data transformations
 # ====================
@@ -48,10 +48,19 @@ as.tibble(DT.Agemix)
 DT.Agemix.men <- DT.Agemix %>% 
   filter(Gender == "Male" & Participant.age >= 15) %>% 
   mutate(Participant.age = Participant.age - 15) %>% 
+  select(-Gender) %>% # drop redundant gender variable
   drop_na()
 
+summary(DT.Agemix.men)
 # the distribution of the partner age: the response
-hist(DT.Agemix.men$Partner.age)
+ggplot(DT.Agemix.men,aes(x= Partner.age)) +
+  geom_histogram(binwidth = 1)
+
+ggplot(DT.Agemix.men,aes(Participant.age,Partner.age)) +
+  geom_jitter(size=3,color="black", width = 0.25, height = 0.25, alpha = 0.5) +
+  xlab("Age") +
+  ylab("Partner age")
+
 
 n_distinct(DT.Agemix.men$Uid) # to obtain the number of unique participants which will form the clusters
 
@@ -90,9 +99,10 @@ plot(allEffects(agemix.model.nlme),rug=F)
 #         ylab = "Participant ID",
 #         scales = list(y = list(draw = FALSE)))
 
-ggplot(data = DT.Agemix.men, aes(x = Participant.age, y = Partner.age)) +
-  geom_point()+
-  theme_set(theme_bw()) +
+ggplot(DT.Agemix.men,aes(Participant.age,Partner.age)) +
+  geom_jitter(size=3,color="black", width = 0.25, height = 0.25, alpha = 0.5) +
+  xlab("Age") +
+  ylab("Partner age")
   geom_abline(intercept = fixef(agemix.model.nlme)[1], slope = fixef(agemix.model.nlme)[2], col = "red")+
   geom_abline(intercept = coef(agemix.model.nlme)["0000208",]$`(Intercept)`,
               slope = coef(agemix.model.nlme)["0000208",]$Participant.age, 
