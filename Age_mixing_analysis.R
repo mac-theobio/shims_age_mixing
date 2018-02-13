@@ -6,7 +6,6 @@
 # load libraries
 # ==============
 library(tidyverse)
-library(lme4)
 library(data.table)
 library(lattice) #xyplot
 library(nlme) # fitting lmm
@@ -135,22 +134,43 @@ agemix.model.nlme.hetero <- lme(Partner.age~ Participant.age,
 
 summary(agemix.model.nlme.hetero)
 
+#=====
+# proving how the variance function is computed. This shows if you are older the variance is 
+# much higher 
+
+DT.Agemix.men.new <- DT.Agemix.men
+DT.Agemix.men.new$varweight = 1/abs(DT.Agemix.men$Participant.age)^0.6198723 
+
+#=====
+
 agemix.model.nlme.hetero1 <- lme(Partner.age~ Participant.age, 
                             data = DT.Agemix.men,method = "REML",
-                            weights = varConstPower(form = ~Participant.age),
+                            weights = varConstPower(form = ~Participant.age, fixed = list(const =1)),
                             random = ~1|Uid)
 
 summary(agemix.model.nlme.hetero1)
 
+
+agemix.model.nlme.hetero2 <- lme(Partner.age~ Participant.age, 
+                                data = DT.Agemix.men,method = "REML",
+                                weights = varPower(value = 0, # this starting point is the homoscedastic form
+                                                   form = ~1 + Participant.age),
+                                random = ~1|Uid)
+
+summary(agemix.model.nlme.hetero2)
 # test the significance of the heteroscedastic model. heteroscedastic model is much better 
 # as shown by the significant decrease in AIC.
-anova(agemix.model.nlme.hetero,agemix.model.nlme.hetero1)
+anova(agemix.model.nlme,agemix.model.nlme.hetero1)
 
+# compare the heteroscedastic models
+anova(agemix.model.nlme.hetero,agemix.model.nlme.hetero1)
+anova(agemix.model.nlme.hetero1,agemix.model.nlme.hetero2)
 # plot the standardized residuals shows a reasonably homogeneous pattern of the variability
 # of the residuals
 
 plot(agemix.model.nlme.hetero, resid(., type = "normalized") ~ Participant.age, abline = 0)
 plot(agemix.model.nlme.hetero1, resid(., type = "normalized") ~ Participant.age, abline = 0)
+
 # assess the variability of the variance parameter estimate
 intervals(agemix.model.nlme.hetero1)
 
