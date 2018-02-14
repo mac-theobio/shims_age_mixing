@@ -102,14 +102,21 @@ plot(allEffects(agemix.model.nlme),rug=F)
 ggplot(DT.Agemix.men,aes(Participant.age,Partner.age)) +
   geom_jitter(size=3,color="black", width = 0.25, height = 0.25, alpha = 0.5) +
   xlab("Age") +
-  ylab("Partner age")
-  geom_abline(intercept = fixef(agemix.model.nlme)[1], slope = fixef(agemix.model.nlme)[2], col = "red")+
+  ylab("Partner age") + 
+  geom_abline(intercept = fixef(agemix.model.nlme)[["(Intercept)"]], 
+              slope = fixef(agemix.model.nlme)[["Participant.age"]], 
+              col = "red",
+              size = 1.25) +
   geom_abline(intercept = coef(agemix.model.nlme)["0000208",]$`(Intercept)`,
               slope = coef(agemix.model.nlme)["0000208",]$Participant.age, 
-              col = "blue") +
+              col = "blue",
+              size = 1.25) +
   geom_abline(intercept = coef(agemix.model.nlme)["0012036",]$`(Intercept)`,
               slope = coef(agemix.model.nlme)["0012036",]$Participant.age, 
-              col = "green")
+              col = "green",
+              size = 1.25) +
+  scale_x_continuous(labels = function(x)x+15, breaks = scales::pretty_breaks(n = 10)) +
+  scale_y_continuous(breaks = scales::pretty_breaks(n = 10))
 
 agemix.model.2nlme <- lme(Partner.age~ Participant.age + Partner.type, 
                           data = DT.Agemix.men,
