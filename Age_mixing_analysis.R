@@ -160,6 +160,11 @@ agemix.model.nlme.hetero <- lme(Partner.age~ Participant.age,
 
 summary(agemix.model.nlme.hetero)
 
+# compare the homoscedastic(constant variance) and heteroscedastic models
+anova(agemix.model.nlme,agemix.model.nlme.hetero)
+# the result of this likelihood ratio test is significant (p<0.001), we choose the 
+# heteroscedastic model as our preferred model.
+
 #=====
 # proving how the variance function is computed. This shows if you are older the variance is 
 # much higher 
@@ -170,27 +175,29 @@ DT.Agemix.men.new$varweight = 1/abs(DT.Agemix.men$Participant.age)^0.6198723
 #=====
 
 agemix.model.nlme.hetero1 <- lme(Partner.age~ Participant.age, 
+                                 data = DT.Agemix.men,method = "REML",
+                                 weights = varPower(value = 0, # this starting point is the homoscedastic form
+                                                    form = ~ Participant.age + 1),
+                                 random = ~1|Uid)
+
+summary(agemix.model.nlme.hetero1)
+
+# compare the heteroscedastic models
+anova(agemix.model.nlme.hetero,agemix.model.nlme.hetero1)
+# new model, agemix.model.nlme.hetero1, has a much smaller AIC/BIC and so we choose it as our preferred
+# model
+ 
+agemix.model.nlme.hetero2 <- lme(Partner.age~ Participant.age, 
                             data = DT.Agemix.men,method = "REML",
                             weights = varConstPower(form = ~Participant.age, fixed = list(const =1)),
                             random = ~1|Uid)
 
-summary(agemix.model.nlme.hetero1)
-
-
-agemix.model.nlme.hetero2 <- lme(Partner.age~ Participant.age, 
-                                data = DT.Agemix.men,method = "REML",
-                                weights = varPower(value = 0, # this starting point is the homoscedastic form
-                                                   form = ~1 + Participant.age),
-                                random = ~1|Uid)
-
 summary(agemix.model.nlme.hetero2)
-# test the significance of the heteroscedastic model. heteroscedastic model is much better 
-# as shown by the significant decrease in AIC.
-anova(agemix.model.nlme,agemix.model.nlme.hetero1)
 
 # compare the heteroscedastic models
-anova(agemix.model.nlme.hetero,agemix.model.nlme.hetero1)
 anova(agemix.model.nlme.hetero1,agemix.model.nlme.hetero2)
+# these two models have the same AIC so we retain our old model as our preferred model.
+
 # plot the standardized residuals shows a reasonably homogeneous pattern of the variability
 # of the residuals
 
