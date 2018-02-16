@@ -70,12 +70,24 @@ sum(table(DT.Agemix.men$Uid)>1)
 # =======================
 # Random intercept model
 # =======================
-agemix.model.nlme <- lme(Partner.age~ Participant.age, 
+
+agemix.model.nlme.null <- lme(Partner.age ~ 1, 
+                              data = DT.Agemix.men,
+                              method = "REML",
+                              random = ~1|Uid)
+
+summary(agemix.model.nlme.null)
+# null model helps us understand the structure of the data. Gives baseline AIC/BIC values
+# ICC = 0.19 which means that the correlation of partner age score within an individual is 0.19
+
+agemix.model.nlme <- lme(Partner.age ~ Participant.age, 
                          data = DT.Agemix.men,
                          method = "REML",
                          random = ~1|Uid)
 
 summary(agemix.model.nlme)
+
+anova(update(agemix.model.nlme.null, method= "ML"),update(agemix.model.nlme, method= "ML"))
 
 ranef(agemix.model.nlme) # to extract random effects from the model
 
@@ -185,7 +197,7 @@ agemix.model.nlme.hetero1 <- lme(Partner.age~ Participant.age,
 summary(agemix.model.nlme.hetero1)
 
 # compare the heteroscedastic models
-anova(agemix.model.nlme.hetero,agemix.model.nlme.hetero1)
+AIC(agemix.model.nlme.hetero,agemix.model.nlme.hetero1)
 # new model, agemix.model.nlme.hetero1, has a much smaller AIC/BIC and so we choose it as our preferred
 # model
  
@@ -197,7 +209,7 @@ agemix.model.nlme.hetero2 <- lme(Partner.age~ Participant.age,
 summary(agemix.model.nlme.hetero2)
 
 # compare the heteroscedastic models
-anova(agemix.model.nlme.hetero1,agemix.model.nlme.hetero2)
+AIC(agemix.model.nlme.hetero1,agemix.model.nlme.hetero2)
 # these two models have the same AIC so we retain our old model as our preferred model.
 
 # plot the standardized residuals shows a reasonably homogeneous pattern of the variability
