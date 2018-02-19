@@ -71,6 +71,9 @@ sum(table(DT.Agemix.men$Uid)>1)
 # Random intercept model
 # =======================
 
+# =======
+# Step 1
+# =======
 agemix.model.nlme.null <- lme(Partner.age ~ 1, 
                               data = DT.Agemix.men,
                               method = "REML",
@@ -80,6 +83,20 @@ summary(agemix.model.nlme.null)
 # null model helps us understand the structure of the data. Gives baseline AIC/BIC values
 # ICC = 0.19 which means that the correlation of partner age score within an individual is 0.19
 
+
+# fit a marginal model using gls
+agemix.model.gls <- gls(Partner.age ~ 1, 
+                        data = DT.Agemix.men)
+
+summary(agemix.model.gls)
+
+# do a likelihood ratio test 
+anova(agemix.model.gls, agemix.model.nlme.null)
+# the result suggests that random participant effect should be retained (P < 0.05)
+
+# =======
+# Step 2
+# =======
 agemix.model.nlme <- lme(Partner.age ~ Participant.age, 
                          data = DT.Agemix.men,
                          method = "REML",
@@ -102,16 +119,6 @@ coef(agemix.model.nlme) # to obtain the coefficient for each participant
 # to fit using Maximum likelihood use update
 agemix.model.nlmeML <- update(agemix.model.nlme, method = "ML")
 summary(agemix.model.nlmeML)
-
-# fit a marginal model using gls
-agemix.model.gls <- gls(Partner.age~ Participant.age, 
-                        data = DT.Agemix.men)
-
-summary(agemix.model.gls)
-
-# do a likelihood ratio test 
-anova(agemix.model.gls, agemix.model.nlme)
-# the result suggests that random participant effect should be retained (P < 0.05)
 
 library(effects)
 plot(allEffects(agemix.model.nlme),rug=F)
