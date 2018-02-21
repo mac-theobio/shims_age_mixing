@@ -138,24 +138,6 @@ plot(allEffects(agemix.M2),rug=F)
 #         ylab = "Participant ID",
 #         scales = list(y = list(draw = FALSE)))
 
-ggplot(DT.Agemix.men,aes(Participant.age,Partner.age)) +
-  geom_jitter(size=3,color="black", width = 0.25, height = 0.25, alpha = 0.5) +
-  xlab("Age") +
-  ylab("Partner age") + 
-  geom_abline(intercept = fixef(agemix.M2)[["(Intercept)"]], 
-              slope = fixef(agemix.M2)[["Participant.age"]], 
-              col = "red",
-              size = 1.25) +
-  geom_abline(intercept = coef(agemix.M2)["0000208",]$`(Intercept)`,
-              slope = coef(agemix.M2)["0000208",]$Participant.age, 
-              col = "blue",
-              size = 1.25) +
-  geom_abline(intercept = coef(agemix.M2)["0012036",]$`(Intercept)`,
-              slope = coef(agemix.M2)["0012036",]$Participant.age, 
-              col = "green",
-              size = 1.25) +
-  scale_x_continuous(labels = function(x)x+15, breaks = scales::pretty_breaks(n = 10)) +
-  scale_y_continuous(breaks = scales::pretty_breaks(n = 10))
 
 # agemix.M3 <- lme(Partner.age~ Participant.age + Partner.type, 
 #                           data = DT.Agemix.men,
@@ -254,4 +236,23 @@ plot(agemix.M5, resid(., type = "normalized") ~ Participant.age, abline = 0)
 # assess the variability of the variance parameter estimate
 intervals(agemix.M5)
 
+# =======
+# plots
+# =======
 
+ggplot(DT.Agemix.men,aes(Participant.age,Partner.age)) +
+  geom_jitter(size=3,color="black", width = 0.25, height = 0.25, alpha = 0.5) +
+  xlab("Participant's age") +
+  ylab("Partner's age") + 
+  scale_x_continuous(labels = function(x)x+15, breaks = scales::pretty_breaks(n = 10)) +
+  scale_y_continuous(breaks = scales::pretty_breaks(n = 10)) +
+  theme(axis.text.x = element_text(size=11),
+        axis.text.y = element_text(size=11)) +
+  theme(text=element_text( size=11)) + 
+  geom_abline(aes(intercept = fixef(agemix.M5)[["(Intercept)"]],slope = fixef(agemix.M5)[["Participant.age"]], color = "Population average"),
+              size = 1.25) +
+  geom_abline(aes(intercept = 15,slope =1,color = "Same age (x = y)"), size = 1.25) +
+  scale_colour_manual(name="Line Colour",
+                      values=c("Population average" = "red", "Same age (x = y)" ="#1B9E77")) 
+
+ggsave("Agemixing.png", width = 6.25, height = 5.25)
