@@ -87,7 +87,7 @@ DT.rel.men <- na.exclude(subset(DT.reldata, Gender == "Male" & Age.participant >
 # ordering levels
 freqlevels = c("never","sometimes","always")
 sexlevels = c("1","between 2-5","between 6-10","more than 10")
-partlevels = c("husband/wife","regular partner","casual partner")
+partlevels = c("casual partner","regular partner","husband/wife")
 
 DT.reldata.men <- DT.rel.men %>% 
   transmute(Uid = as.factor(Uid),
@@ -103,3 +103,62 @@ DT.reldata.men <- DT.rel.men %>%
             Partner.type = ordered(Partner.type, levels = partlevels),
             Money.gifts = ordered(Money.gifts, levels = freqlevels)
   )
+
+n_distinct(DT.reldata.men$Uid) # to obtain the number of unique participants which will form the clusters
+
+# ===============
+# Condom Use
+# ===============
+
+# frequncies of the condom use levels
+ggplot(data = DT.reldata.men) +
+  geom_bar(aes(Condom.frequency))
+
+# ====================================
+# Step 1, ordinary partner level model
+# ====================================
+# A cumulative logit model that includes the effect of age difference on condom use
+
+condom.M0 <- clm(Condom.frequency ~ Age.difference,
+                 data = DT.reldata.men,
+                 link = "logit")
+
+summary(condom.M0)
+
+# confidence intervals
+confint(condom.M0, type = "Wald")
+confint(condom.M0, type = "profile")
+
+# ====================================
+# Step 2, participant level model
+# ====================================
+# cumulative logit random intercept model
+
+condom.M1 <- clmm(Condom.frequency ~ Age.difference + (1|Uid),
+                  data = DT.reldata.men,
+                  link = "logit",
+                  nAGQ = 7,
+                  Hess = T) #if you need to call summary
+
+summary(condom.M1)
+
+
+condom.M1b <- clmm(Condom.frequency ~ Age.difference + (1|Uid),
+                   data = DT.reldata.men,
+                   link = "logit",
+                   Hess = T) #if you need to call summary
+
+summary(condom.M1b)
+
+# M1 is using is using the Gauss-Hermite  quadrature method to compute the likelihood while 
+# M1b is using laplace approximation  
+# The two fits are different. The Gauss-Hermite method performs better than laplace.
+
+# likelihood ratio test to determine whether the random effect is necessary
+anova(condom.M0,condom.M1)
+
+ranef(condom.M1)
+
+# the cumulative probability of sometimes or never use condom for an average participant
+plogis(condom.M1$Theta[2] - condom.M1$beta)
+

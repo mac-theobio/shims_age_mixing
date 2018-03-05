@@ -196,7 +196,7 @@ plot(slice.condom.m1)
 condom model 1
 -1.1583 is the log-odds of falling into or below category 1 ("never") vs 2/3 ("sometimes") when age difference = 0.
 0.5538 is the log-odds of falling into or below category 2 ("sometimes") vs 3 ("always") when age difference = 0.
-The lower the value of age difference, the higher the probability of the response falling in the lower level i.e no condom use
+The higher the value of age difference, the higher the probability of the response falling in the lower level i.e no condom use
 -0.04528 is the decrease in log-odds of falling into or above any category associated with a one-unit increase in age difference
 http://data.library.virginia.edu/fitting-and-interpreting-a-proportional-odds-model/
 
