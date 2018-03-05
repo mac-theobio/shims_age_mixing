@@ -40,6 +40,10 @@ DT.Agemix <- T1.agemixing %>% melt( measure = patterns("^Age.res", "^Partner.age
                                    variable.name = "Partner") 
 as.tibble(DT.Agemix)
 
+
+# =========================
+# Exploratory data analysis
+# =========================
 # tidy dataset
 # Remove all data from respondents younger than 15 years old
 # Subtract 15 from all respondent ages, so that a respondent.age.at.relationship.formation” is
@@ -52,15 +56,20 @@ DT.Agemix.men <- DT.Agemix %>%
   drop_na()
 
 summary(DT.Agemix.men)
+
 # the distribution of the partner age: the response
 ggplot(DT.Agemix.men,aes(x= Partner.age)) +
   geom_histogram(binwidth = 1)
+
+boxplot(DT.Agemix.men$Partner.age, horizontal = T)
+
+# remove outliers (major = 3*IQR)
+DT.Agemix.men <- filter(DT.Agemix.men, Partner.age <= 37)
 
 ggplot(DT.Agemix.men,aes(Participant.age,Partner.age)) +
   geom_jitter(size=3,color="black", width = 0.25, height = 0.25, alpha = 0.5) +
   xlab("Age") +
   ylab("Partner age")
-
 
 n_distinct(DT.Agemix.men$Uid) # to obtain the number of unique participants which will form the clusters
 
@@ -81,7 +90,9 @@ agemix.M0 <- lme(Partner.age ~ 1,
 
 summary(agemix.M0)
 # null model helps us understand the structure of the data. Gives baseline AIC/BIC values
-# ICC = 0.19 which means that the correlation of partner age score within an individual is 0.19
+ICC <- 1.410639^2/(1.410639^2 + 3.921109^2)
+ICC
+# ICC = 0.11 which means that the correlation of partner age score within an individual is 0.11
 
 
 # fit a marginal model using gls
@@ -118,6 +129,7 @@ agemix.M2 <- lme(Partner.age ~  Participant.age,
 
 summary(agemix.M2)
 
+intervals(agemix.M2)
 ranef(agemix.M2) # to extract random effects from the model
 
 fixef(agemix.M2) # to extract the fixed effects estimates
@@ -245,7 +257,8 @@ ggplot(DT.Agemix.men,aes(Participant.age,Partner.age)) +
   xlab("Participant's age") +
   ylab("Partner's age") + 
   scale_x_continuous(labels = function(x)x+15, breaks = scales::pretty_breaks(n = 10)) +
-  scale_y_continuous(breaks = scales::pretty_breaks(n = 10)) +
+  scale_y_continuous(breaks = scales::pretty_breaks(n = 5)) +
+  coord_fixed()+
   theme(axis.text.x = element_text(size=11),
         axis.text.y = element_text(size=11)) +
   theme(text=element_text( size=11)) + 
@@ -255,4 +268,4 @@ ggplot(DT.Agemix.men,aes(Participant.age,Partner.age)) +
   scale_colour_manual(name="Line Colour",
                       values=c("Population average" = "red", "Same age (x = y)" ="#1B9E77")) 
 
-ggsave("Agemixing.png", width = 6.25, height = 5.25)
+ggsave("Agemixing.png", width = 6.25, height = 5.25,dpi = 1200)
