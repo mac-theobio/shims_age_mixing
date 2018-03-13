@@ -169,27 +169,36 @@ plot(allEffects(agemix.M2),rug=F)
 # ==================
 
 # heteroscedastic errors in nlme
+
+# extract the fitted values and the residuals from the agemix.M2 model
+heteroscedastic <- tibble(
+  residuals.M2 = residuals(agemix.M2),
+  fitted.M2 = fitted(agemix.M2),
+  Participant.age = agemix.M2$data$Participant.age
+)
+
 # plotting residuals against the fitted values - detecting heteroscedasticity
 
-png("detecthetero.png", 
-    width = 6.25,
-    height = 5.25,
-    units = "in",
-    res = 1200, 
-    pointsize = 4)
-plot(agemix.M2, residuals(.) ~ fitted(.), abline = 0 )
-dev.off()
+ggplot(heteroscedastic, aes(fitted.M2, residuals.M2)) +
+  geom_point(shape = 21, color = "blue", size = 2.5)+
+  geom_hline(yintercept = 0) +
+  xlab("Fitted Values") +
+  ylab("Residuals") 
+  
+ggsave("detecthetero.png", width = 6.25, height = 5.25,dpi = 1200)
 
 # check why there is heteroscedasticity
 
-png("detecthetero1.png", 
-    width = 6.25,
-    height = 5.25,
-    units = "in",
-    res = 1200, 
-    pointsize = 4)
-plot(agemix.M2, residuals(.) ~ Participant.age, abline = 0)
-dev.off()
+ggplot(heteroscedastic, aes(Participant.age, residuals.M2)) +
+  geom_point(shape = 21, color = "blue", size = 2.5) +
+  geom_hline(yintercept = 0) +
+  xlab("Participant age") +
+  ylab("Residuals") +
+  scale_x_continuous(labels = function(x)x+15, breaks = scales::pretty_breaks(n = 10)) +
+  scale_y_continuous(breaks = scales::pretty_breaks(n = 5)) +
+  coord_fixed()
+
+ggsave("detecthetero1.png", width = 6.25, height = 5.25,dpi = 1200)
 
 # confirms that the within group variability increases with participant age 
 # var(eij) increases when participant age increases
