@@ -4,7 +4,8 @@
 
 library(tidyverse)
 library(readxl)
-
+library(sas7bdat)
+library(data.table)
 # =======================
 # Source global functions
 # =======================
@@ -14,57 +15,64 @@ source("Functions_for_SHIMS_study.R")
 # ================
 # Data importation
 # ================
-
-Sample.Baseline <- read_excel("SAMPLE_T1_2017-05-02_00-59-36.xlsx")
-
-# Eliminate spaces from variable names (old style)
-names(Sample.Baseline) <- make.names(names(Sample.Baseline))
+T1.Baseline <- read.sas7bdat("/Users/emanuel/Dropbox/SHIMS Baseline data/baseline.sas7bdat")
 
 # ordering levels
-freqlevels = c("never","sometimes","always")
-sexlevels = c("1","between 2-5","between 6-10","more than 10")
-partlevels = c("husband/wife","regular partner","casual partner")
+freqlevels = c("never" = 3, "sometimes" = 2, "always" = 1,"REF" = 4)
+sexlevels = c("1" = 1, "between 2-5" = 2, "between 6-10" = 3,"more than 10" = 4,"REF" = 5)
+partlevels = c( "casual partner" = 3, "regular partner" = 2, "husband/wife" = 1, "REF" = 4)
+gender = c("male" = 1, "female" = 2)
+partnersex = c("male" = 1, "female" = 2, "DK" = 3, "REF" = 4)
 
 # ===============
 # Subset the data
 # ===============
 
 # Subset the data as you change the variable names and data types
-T1.agemix <- Sample.Baseline %>% transmute(Uid = Uid,
-                                           Region,
-                                           Gender = as.factor(REQsex),
-                                           Age = Age.REQ,
-                                           EnrollmentDate = as.POSIXct(REQ.Erdt),
-                                           Start.rel.date.p1 = RQp1rbmy,
-                                           End.rel.date.p1 = RQp1remy,
-                                           Partner.age.p1 = as.numeric(RQp1ftyy),
-                                           Start.rel.date.p2 = RQp2rbmy,
-                                           End.rel.date.p2 = RQp2remy,
-                                           Partner.age.p2 = as.numeric(RQp2ftyy),
-                                           Start.rel.date.p3 = RQp3rbmy,
-                                           End.rel.date.p3 = RQp3remy,
-                                           Partner.age.p3 = as.numeric(RQp3ftyy),
-                                           No.partners = as.numeric(RQtnp6m),
-                                           Condom.freq.p1 = ordered(RQp1hocu,levels = freqlevels),
-                                           Condom.freq.p2 = ordered(RQp2hocu,levels = freqlevels),
-                                           Condom.freq.p3 = ordered(RQp3hocu,levels = freqlevels),
-                                           Sex.freq.p1 = ordered(RQp1hm6s,levels = sexlevels),
-                                           Sex.freq.p2 = ordered(RQp2hm6s,levels = sexlevels),
-                                           Sex.freq.p3 = ordered(RQp3hm6s,levels = sexlevels),
-                                           Money.gifts.p1 = ordered(RQp1grm,levels = freqlevels),
-                                           Money.gifts.p2 = ordered(RQp2grm,levels = freqlevels),
-                                           Money.gifts.p3 = ordered(RQp3grm,levels = freqlevels),
-                                           Partner.type.p1 = ordered(RQp1psr,levels = partlevels),
-                                           Partner.type.p2 = ordered(RQp2psr,levels = partlevels),
-                                           Partner.type.p3 = ordered(RQp3psr,levels = partlevels)
-                                           )
+
+T1.agemix <- T1.Baseline %>% transmute(Uid = uid,
+                                       Region = region,
+                                       Gender = factor(REQsex, levels = gender, labels = names(gender)),
+                                       Age = age_REQ,
+                                       EnrollmentDate = as.Date(REQ_erdt, "%d%b%y"),
+                                       Start.rel.date.p1 = RQp1rbmy,
+                                       End.rel.date.p1 = RQp1remy,
+                                       Partner.age.p1 = as.numeric(RQp1ftyy),
+                                       Partner.gender.p1 = factor(RQp1ps, levels = partnersex, labels = names(partnersex)),
+                                       Start.rel.date.p2 = RQp2rbmy,
+                                       End.rel.date.p2 = RQp2remy,
+                                       Partner.age.p2 = as.numeric(RQp2ftyy),
+                                       Partner.gender.p2 = factor(RQp2ps, levels = partnersex, labels = names(partnersex)),
+                                       Start.rel.date.p3 = RQp3rbmy,
+                                       End.rel.date.p3 = RQp3remy,
+                                       Partner.age.p3 = as.numeric(RQp3ftyy),
+                                       Partner.gender.p3 = factor(RQp3ps, levels = partnersex, labels = names(partnersex)),
+                                       No.partners = as.numeric(RQtnp6m),
+                                       Condom.freq.p1 = ordered(RQp1hocu,levels = freqlevels, labels = names(freqlevels)),
+                                       Condom.freq.p2 = ordered(RQp2hocu,levels = freqlevels, labels = names(freqlevels)),
+                                       Condom.freq.p3 = ordered(RQp3hocu,levels = freqlevels, labels = names(freqlevels)),
+                                       Sex.freq.p1 = ordered(RQp1hm6s,levels = sexlevels, labels = names(sexlevels)),
+                                       Sex.freq.p2 = ordered(RQp2hm6s,levels = sexlevels, labels = names(sexlevels)),
+                                       Sex.freq.p3 = ordered(RQp3hm6s,levels = sexlevels, labels = names(sexlevels)),
+                                       Money.gifts.p1 = ordered(RQp1grm,levels = freqlevels, labels = names(freqlevels)),
+                                       Money.gifts.p2 = ordered(RQp2grm,levels = freqlevels, labels = names(freqlevels)),
+                                       Money.gifts.p3 = ordered(RQp3grm,levels = freqlevels, labels = names(freqlevels)),
+                                       Partner.type.p1 = ordered(RQp1psr,levels = partlevels, labels = names(partlevels)),
+                                       Partner.type.p2 = ordered(RQp2psr,levels = partlevels, labels = names(partlevels)),
+                                       Partner.type.p3 = ordered(RQp3psr,levels = partlevels, labels = names(partlevels))
+)
+
+
+# looking at the data, NaN appears to be used when there is no information...eg if someone did not have
+# a sexual relationship then data for partners will appear as NaN-----this implies that this is not missing data
+# in most cases
 
 # ====================
 # Create new variables
 # ====================
 
 # create a variable for age of participant when he/she had sexual rel started with 
-# partner 1
+# partner 1,2,3
 
 T1.agemix$Age.res.p1 <- AgeResAtRelOnset(currentage = T1.agemix$Age,
                                          currentdate = T1.agemix$EnrollmentDate,
@@ -126,11 +134,76 @@ T1.agemix$Age.diff.p3 <- ifelse(T1.agemix$Gender == "Male",
                                 T1.agemix$Age.res.p3-T1.agemix$Partner.age.p3,
                                 T1.agemix$Partner.age.p3 - T1.agemix$Age.res.p3)
 
+
+# ===========
+# Subset data
+# ===========
+
+T1.agemixing <- T1.agemix %>% transmute(Uid,
+                                        Gender,
+                                        No.partners,
+                                        Age.res.p1,
+                                        Age.res.p2,
+                                        Age.res.p3,
+                                        Partner.age.p1,
+                                        Partner.age.p2,
+                                        Partner.age.p3,
+                                        Age.diff.p1,
+                                        Age.diff.p2,
+                                        Age.diff.p3,
+                                        Partner.gender.p1,
+                                        Partner.gender.p2,
+                                        Partner.gender.p3,
+                                        Condom.freq.p1,
+                                        Condom.freq.p2,
+                                        Condom.freq.p3,
+                                        Sex.freq.p1,
+                                        Sex.freq.p2,
+                                        Sex.freq.p3,
+                                        Partner.type.p1,
+                                        Partner.type.p2,
+                                        Partner.type.p3,
+                                        Rel.dur.p1,
+                                        Rel.dur.p2,
+                                        Rel.dur.p3,
+                                        Rel.ended.p1,
+                                        Rel.ended.p2,
+                                        Rel.ended.p3,
+                                        Money.gifts.p1,
+                                        Money.gifts.p2,
+                                        Money.gifts.p3)
+
+# convert to long format
+
+setDT(T1.agemixing) #convert to a data.table for easy manipulation
+
+DT.Agemix <- T1.agemixing %>% melt( measure = patterns("^Age.res", "^Partner.age", "^Age.diff","^Partner.gender",
+                                                       "^Condom.freq", "^Sex.freq","^Partner.type", "^Rel.dur",
+                                                       "^Rel.ended", "^Money.gifts"),
+                                    value.name = c("Participant.age", "Partner.age", "Age.difference","Partner.gender",
+                                                   "Condom.frequency", "Sex.frequency","Partner.type", "Relationship.dur",
+                                                   "Rel.ended", "Money.gifts"),
+                                    variable.name = "Partner") 
+
+                                      
+# tidy dataset
+# Remove all data from respondents younger than 15 years old
+# Subtract 15 from all respondent ages, so that a respondent.age.at.relationship.formation” is
+# coded 0 for a man who started a relationship at age 15 years old.
+
+DT.Agemix.men <- DT.Agemix %>% 
+  filter(Gender == "male" & Participant.age >= 15) %>% 
+  mutate(Participant.age = Participant.age - 15) %>% 
+  filter(Gender != Partner.gender) %>% # remove same sex #only 44 men reported same sex partners
+  select(-Gender) %>% # drop redundant gender variable
+  drop_na()
+
+summary(DT.Agemix.men)                                      
 # ============================
 # Save the data as an R object
 # ============================
 
 #T1.agemix <- subset(T1.agemix, Gender == "Male")
 # Save the dataframe
-save(T1.agemix, file = "T1.agemix.Rdata")
+save(DT.Agemix.men, file = "/Users/emanuel/Dropbox/SHIMS Baseline data/DT.Agemix.men.Rdata")
 
