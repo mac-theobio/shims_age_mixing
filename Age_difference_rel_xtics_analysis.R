@@ -159,11 +159,12 @@ ggplot(tidycond.0, aes(Age.difference, fit)) +
 
 png("condomusefreq.png")
 
-plot(Effect("Age.difference", condom.M1,
-            xlevels = list(Age.difference = 50),
-            latent = T))
+# plot(Effect("Age.difference", condom.M1,
+#             xlevels = list(Age.difference = 50),
+#             latent = T))
+# 
+# dev.off()
 
-dev.off()
 # the dotted line s-a indcates the boundary between "sometimes" and "always" while 
 # n-s indicates the boundary between "never" and "sometimes"
 # most of the people with age difference between -10 and 18 years would be expected to answer 
@@ -229,6 +230,8 @@ cond.pred
 # ====================================
 # cumulative logit random intercept model
 
+start_time <- Sys.time()
+
 condom.M2 <- clmm(Condom.frequency ~ ns(Age.difference,df = 4) + (1|Uid),
                    #random =  Uid,
                    data = DT.reldata.men,
@@ -237,6 +240,9 @@ condom.M2 <- clmm(Condom.frequency ~ ns(Age.difference,df = 4) + (1|Uid),
                    Hess = T) #if you need to call summary
 
 summary(condom.M2)
+
+end_time <- Sys.time()
+end_time - start_time
 
 plot(Effect("Age.difference", condom.M2))
 # Extracting the effects generated using the effects function
@@ -371,10 +377,12 @@ cv.clmm <- function(Data, K = 10, seed = 1234, dof){
 
 # example
 degreesoffreedom <- c(1:20)
-# debug(cv.clmm)
-mycv <- cv.clmm(Data = DT.reldata.men, K = 10,dof = degreesoffreedom,seed = 1)
-plot(mycv, type = "l")
 
+start_time <- Sys.time()
+mycv <- cv.clmm(Data = DT.reldata.men, K = 10,dof = 1,seed = 1)
+plot(mycv, type = "l")
+end_time <- Sys.time()
+end_time - start_time
 
 
 # ===========================================
