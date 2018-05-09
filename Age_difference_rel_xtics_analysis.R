@@ -1,10 +1,9 @@
-# =============================================================================
-# Associations between age difference and relationship characteristics analysis
-# =============================================================================
 
-# ==============
+# Associations between age difference and relationship characteristics analysis
+
+
 # load libraries
-# ==============
+
 #library(data.table)
 library(tidyverse)
 library(ordinal)    #for cumulative link mixed models
@@ -15,21 +14,21 @@ library(cowplot)    #plot_grid
 library(dotwhisker) #make dot whisker plots
 library(broom)      #convert objects into tidy data frame: tidy()
 library(visreg)     #getting "contrast" hazard ratios
-#install_github("baptiste/egg")
-library(egg)
+library(egg)        #devtools::install_github("baptiste/egg") #for plot management
+library(strcode)    #devtools::install_github("lorenzwalthert/strcode") #for code structuring with sub/headings
 
-# ========================
-# load data and functions
-# ========================
+## load data and functions
 
 #load("~/Documents/shims_age_mixing/DT.Agemix.men.5.Rdata") # 5% random sample
 load("/Users/emanuel/Dropbox/SHIMS Baseline data/DT.Agemix.men.Rdata") # full dataset
 theme_set(theme_bw()) # set global plot theme 
 source("Functions_for_SHIMS_study.R")
 
-# =========================
-# Subset and Exploratory data analysis
-# =========================
+
+# Condom Use Analysis -----------------------------------------------------
+
+# ** Subset and Exploratory data analysis-------------------------------------
+
 
 # ordering levels
 freqlevels = c("never","sometimes","always")
@@ -57,24 +56,20 @@ sum(table(DT.reldata.men$Uid) == 1)
 sum(table(DT.reldata.men$Uid) == 2)
 sum(table(DT.reldata.men$Uid) == 3)
 
-# remove extreme outliers (major = 3*IQR)
-H = 3*IQR(DT.reldata.men$Age.difference)
-U = quantile(DT.reldata.men$Age.difference, probs = 0.75) + H
-L = quantile(DT.reldata.men$Age.difference, probs = 0.25) - H
-
-DT.reldata.men <- filter(DT.reldata.men, Age.difference >= L & Age.difference <= U)
-
-# ===============
-# Condom Use
-# ===============
+# # remove extreme outliers (major = 3*IQR)
+# H = 3*IQR(DT.reldata.men$Age.difference)
+# U = quantile(DT.reldata.men$Age.difference, probs = 0.75) + H
+# L = quantile(DT.reldata.men$Age.difference, probs = 0.25) - H
+# 
+# DT.reldata.men <- filter(DT.reldata.men, Age.difference >= L & Age.difference <= U)
 
 # frequncies of the condom use levels
 ggplot(data = DT.reldata.men) +
   geom_bar(aes(Condom.frequency))
 
-# ====================================
-# Step 1, ordinary partner level model
-# ====================================
+
+# ** Step 1, ordinary partner level model ------------------------------------
+
 # A cumulative logit model that includes the effect of age difference on condom use
 
 condom.M0 <- clm(Condom.frequency ~ Age.difference,
@@ -92,9 +87,7 @@ condom.Porl <- MASS::polr(Condom.frequency ~ ns(Age.difference,4),
 summary(condom.Porl)
 head(predict(condom.Porl, type = "p"),n=20)
 
-# ====================================
-# Step 2, participant level model
-# ====================================
+# ** Step 2, participant level model -----------------------------------------
 # cumulative logit random intercept model
 
 condom.M1 <- clmm(Condom.frequency ~ Age.difference + (1|Uid),
@@ -225,9 +218,9 @@ cond.pred <- tidycond.1b %>%
 
 cond.pred
 
-# ====================================
-# Step 3, regression spline model
-# ====================================
+
+# ** Step 3, regression spline model--------------------------------------
+
 # cumulative logit random intercept model
 
 start_time <- Sys.time()
@@ -335,7 +328,7 @@ tidycond.3 <- Effect("Age.difference", condom.M2,
 
 table(tidycond.3$pred.cat)
 
-# Cross validation
+# ** Cross validation --------------------------------------
 
 cv.clmm <- function(Data, K = 10, seed = 1234, dof){
   # A function that computes cross validation error for a clmm2 model with 4 df in the spline term
@@ -385,10 +378,505 @@ end_time <- Sys.time()
 end_time - start_time
 
 
-# ===========================================
-# Relationship duration versus age difference
-# ===========================================
+# Sex Frequency Analysis -----------------------------------------------------
+# ** Subset and Exploratory data analysis -----------------------------------
 
-# start with discriptive univariate analyses
-# scatterplot of relationship duration versus age difference for both censored and uncensored (Hosmer & leme). 
-# the color represents the value of censor
+# ordering levels
+freqlevels = c("never","sometimes","always")
+sexlevels = c("1","between 2-5","between 6-10","more than 10")
+partlevels = c("casual partner","regular partner","husband/wife")
+
+
+DT.sexdata.men <- DT.Agemix.men %>% 
+  transmute(Uid = as.factor(Uid),
+            No.partners,
+            Partner,
+            Age.difference,
+            Relationship.dur,
+            Rel.ended = as.factor(Rel.ended),
+            Condom.frequency = ordered(Condom.frequency, levels = freqlevels),
+            Sex.frequency = ordered(Sex.frequency, levels = sexlevels),
+            Partner.type = ordered(Partner.type, levels = partlevels),
+            Money.gifts = ordered(Money.gifts, levels = freqlevels)) %>% 
+  drop_na(Age.difference,Sex.frequency)
+
+summary(DT.sexdata.men)
+
+# men who reported 1,2,3 partner
+sum(table(DT.sexdata.men$Uid) == 1)
+sum(table(DT.sexdata.men$Uid) == 2)
+sum(table(DT.sexdata.men$Uid) == 3)
+
+# # remove extreme outliers (major = 3*IQR)
+# H = 3*IQR(DT.sexdata.men$Age.difference)
+# U = quantile(DT.sexdata.men$Age.difference, probs = 0.75) + H
+# L = quantile(DT.sexdata.men$Age.difference, probs = 0.25) - H
+# 
+# DT.sexdata.men <- filter(DT.sexdata.men, Age.difference >= L & Age.difference <= U)
+
+# sex frequncies levels
+ggplot(data = DT.sexdata.men) +
+  geom_bar(aes(Sex.frequency))
+
+
+
+# ** Step 1, ordinary partner level model ----------------------------------------
+# A cumulative logit model that includes the effect of age difference on condom use
+
+sex.M0 <- clm(Sex.frequency ~ Age.difference,
+                 data = DT.sexdata.men)
+
+summary(sex.M0)
+
+
+# ** Step 2, participant level model ---------------------------------------------
+# cumulative logit random intercept model
+
+sex.M1 <- clmm(Sex.frequency ~ Age.difference + (1|Uid),
+                  data = DT.sexdata.men,
+                  #link = "logit", dont specify because effects dont work when specify
+                  nAGQ = 7,
+                  Hess = T) #if you need to call summary
+
+summary(sex.M1)
+
+exp(coef(sex.M1)["Age.difference"])
+
+# likelihood ratio test to determine whether the random effect is necessary
+anova(sex.M0,sex.M1)
+
+# significant difference. random intercept model is more appropriate
+
+sex.M1$ranef
+
+# ICC
+icc = 1.318^2/(1.318^2 + pi^2/3)
+icc
+# 34.6% of the unexplained variation is at the participant level
+
+plot(Effect("Age.difference", sex.M1))
+
+tidysex.0 <- data.frame(Effect("Age.difference", sex.M1,
+                                xlevels = list(Age.difference = 50),
+                                latent = T))  
+
+ggplot(tidysex.0, aes(Age.difference, fit)) +
+  geom_line(color = "#009E73", size = 1.2) +
+  geom_ribbon(aes(ymin = lower, ymax = upper), fill = "#009E73", alpha = 0.25)
+
+png("sexfreq.png")
+
+# Extracting the effects generated using the effects function
+
+tidysex.1 <- Effect("Age.difference", sex.M1, 
+                     xlevels = list(Age.difference = 50)) %>% #default 5 values evaluated but now we want 50
+  data.frame() %>%
+  select(-matches("logit.")) %>% #removes logits
+  gather(var, value, - Age.difference) %>% # long format
+  separate(var, c("fit", "cond"), extra = "merge") %>%
+  mutate(cond = gsub("X", "", cond)) %>%
+  mutate(cond = gsub("prob.", "", cond) %>%
+           ordered(levels = c("1","between.2.5","between.6.10","more.than.10"))%>%
+           plyr::mapvalues(from = c("1","between.2.5","between.6.10","more.than.10"),
+                           to = sexlevels)) %>% 
+  spread(fit, value) 
+
+sex.1a <- tidysex.1 %>%
+  ggplot(aes(x = Age.difference, y = prob, fill = cond)) +
+  geom_area(position = position_stack(reverse = F)) +
+  xlab("Age difference") +
+  ylab("Probability") +
+  scale_fill_brewer(name = "Sex frequency", 
+                    palette = "Dark2")+
+  theme(axis.text.x = element_text(size=11),
+        axis.text.y = element_text(size=11)) +
+  theme(text=element_text( size=11)) 
+
+sex.1a
+ggsave("Sexfrequncy.png", width = 6.25, height = 5.25,dpi = 600)
+
+# Predicted effects on sex  frequency
+tidysex.1b <- OrdPred(sex.M1,"Age.difference",DT.sexdata.men)
+
+#VarPred(sex .M1,"Age.difference",DT.sexdata.men)
+
+sex.pred <- tidysex.1b %>%
+  ggplot(aes(x = Age.difference, y = fit)) +
+  geom_line(size = 1, color = "#009E73") +
+  geom_ribbon(aes(ymin = lwr, ymax = upr),
+              alpha = 0.25,
+              fill = "#009E73") +
+  xlab("Age difference") +
+  ylab("Sex frequency score") +
+  theme(axis.text.x = element_text(size=11),
+        axis.text.y = element_text(size=11)) +
+  theme(text=element_text( size=11)) 
+
+sex.pred
+
+# ** Step 3, regression spline model --------------------------
+
+# cumulative logit random intercept model
+
+start_time <- Sys.time()
+
+sex.M2 <- clmm(Sex.frequency ~ ns(Age.difference,df = 4) + (1|Uid),
+                  #random =  Uid,
+                  data = DT.sexdata.men,
+                  #link = "logit", dont specify because effects dont work when specify
+                  nAGQ = 7,
+                  Hess = T) #if you need to call summary
+
+summary(sex.M2)
+
+end_time <- Sys.time()
+end_time - start_time
+
+plot(Effect("Age.difference", sex.M2))
+# Extracting the effects generated using the effects function
+
+tidysex.2 <- Effect("Age.difference", sex.M2, 
+                     xlevels = list(Age.difference = 50)) %>% #default 5 values evaluated but now we want 50
+  data.frame() %>%
+  select(-matches("logit.")) %>% #removes logits
+  gather(var, value, - Age.difference) %>% # long format
+  separate(var, c("fit", "cond"), extra = "merge") %>%
+  mutate(cond = gsub("X", "", cond)) %>%
+  mutate(cond = gsub("prob.", "", cond) %>%
+           ordered(levels = c("1","between.2.5","between.6.10","more.than.10"))%>%
+           plyr::mapvalues(from = c("1","between.2.5","between.6.10","more.than.10"),
+                           to = sexlevels)) %>% 
+  spread(fit, value) 
+
+sex.2a <- tidysex.2 %>%
+  ggplot(aes(x = Age.difference, y = prob, fill = cond)) +
+  geom_area(position = position_stack(reverse = F)) +
+  xlab("Age difference") +
+  ylab("Probability") +
+  scale_fill_brewer(name = "Sex frequency", 
+                    palette = "Dark2")+
+  theme(axis.text.x = element_text(size=11),
+        axis.text.y = element_text(size=11)) +
+  theme(text=element_text( size=11)) 
+
+sex.2a
+ggsave("Sexfrequency2.png", width = 6.25, height = 5.25,dpi = 600)
+
+# Predicted effects on sex frequency
+tidysex.2b <- OrdPred(sex.M2, "Age.difference",DT.sexdata.men)
+
+#VarPred(sex.M2,"Age.difference",DT.sexdata.men)
+
+sex.pred2 <- tidysex.2b %>%
+  ggplot(aes(x = Age.difference, y = fit)) +
+  geom_line(size = 1, color = "#009E73") +
+  geom_ribbon(aes(ymin = lwr, ymax = upr),
+              alpha = 0.25,
+              fill = "#009E73") +
+  xlab("Age difference") +
+  ylab("Condom use score") +
+  theme(axis.text.x = element_text(size=11),
+        axis.text.y = element_text(size=11)) +
+  theme(text=element_text( size=11)) 
+
+sex.pred2
+
+predictions <- predict.clmm(sex.M2,newdata = DT.sexdata.men,dof = 4)
+
+table(predictions$pred.cat)
+
+cv.clmm <- function(Data, X, Y, K = 10, seed = 1234, dof){
+  # A function that computes cross validation error for a clmm2 model with 4 df in the spline term
+  # create K folds using createFolds() function from caret
+  # first step is to create train and test data
+  # fit the model to the training set
+  # use the fitted model and test data to make predictions
+  # compare the predicted categories with the true categories to give you the test error(cv)
+  # repeat the process K times
+  # output a tibble with cv error for each df
+
+  #Data = Data
+  cross.validation.err <- c()
+  degrees.freedom <- c()
+  set.seed(seed)
+  
+  for (j in 1:length(dof)) {
+    folds <- caret::createFolds(Data[[Y]], k = K, list = TRUE)
+    
+    test.error <- c() # create an empty vector
+    
+    for (i in seq_len(K)) {
+      DT.train.i <- Data[-folds[[i]],]
+      DT.test.i <- Data[folds[[i]],]
+      clmm.fit.i <- clmm(Sex.frequency ~ ns(Age.difference,df = dof[j]) + (1|Uid),
+                         data = DT.train.i,
+                         nAGQ = 7,
+                         Hess = T)
+      
+      predictions.i <- predict.clmm(clmm.fit.i,newdata = DT.test.i,dof = dof[j])
+      
+      test.error.i <- sum(DT.test.i[,Y] != predictions.i$pred.cat)/nrow(DT.test.i)
+      test.error[i] <- test.error.i
+    }
+    cross.validation.err[j] <- mean(test.error)
+    degrees.freedom[j] <- j
+  }
+  CV.dataframe <- dplyr::tibble(degrees.freedom,cross.validation.err)
+  return(CV.dataframe)
+}
+
+# debug(cv.clmm)
+mycv.sex <- cv.clmm(Data = DT.sexdata.men, X = "Age.difference", Y = "Sex.frequency", K = 10,dof = 1, seed = 1)
+plot(mycv, type = "l")
+
+# Partner Type Analysis -----------------------------------------------------
+# ** Subset and Exploratory data analysis -----------------------------------
+
+# ordering levels
+freqlevels = c("never","sometimes","always")
+sexlevels = c("1","between 2-5","between 6-10","more than 10")
+partlevels = c("casual partner","regular partner","husband/wife")
+
+
+DT.sexdata.men <- DT.Agemix.men %>% 
+  transmute(Uid = as.factor(Uid),
+            No.partners,
+            Partner,
+            Age.difference,
+            Relationship.dur,
+            Rel.ended = as.factor(Rel.ended),
+            Condom.frequency = ordered(Condom.frequency, levels = freqlevels),
+            Sex.frequency = ordered(Sex.frequency, levels = sexlevels),
+            Partner.type = ordered(Partner.type, levels = partlevels),
+            Money.gifts = ordered(Money.gifts, levels = freqlevels)) %>% 
+  drop_na(Age.difference,Sex.frequency)
+
+summary(DT.sexdata.men)
+
+# men who reported 1,2,3 partner
+sum(table(DT.sexdata.men$Uid) == 1)
+sum(table(DT.sexdata.men$Uid) == 2)
+sum(table(DT.sexdata.men$Uid) == 3)
+
+# # remove extreme outliers (major = 3*IQR)
+# H = 3*IQR(DT.sexdata.men$Age.difference)
+# U = quantile(DT.sexdata.men$Age.difference, probs = 0.75) + H
+# L = quantile(DT.sexdata.men$Age.difference, probs = 0.25) - H
+# 
+# DT.sexdata.men <- filter(DT.sexdata.men, Age.difference >= L & Age.difference <= U)
+
+# sex frequncies levels
+ggplot(data = DT.sexdata.men) +
+  geom_bar(aes(Sex.frequency))
+
+
+
+# ** Step 1, ordinary partner level model ----------------------------------------
+# A cumulative logit model that includes the effect of age difference on condom use
+
+sex.M0 <- clm(Sex.frequency ~ Age.difference,
+              data = DT.sexdata.men)
+
+summary(sex.M0)
+
+
+# ** Step 2, participant level model ---------------------------------------------
+# cumulative logit random intercept model
+
+sex.M1 <- clmm(Sex.frequency ~ Age.difference + (1|Uid),
+               data = DT.sexdata.men,
+               #link = "logit", dont specify because effects dont work when specify
+               nAGQ = 7,
+               Hess = T) #if you need to call summary
+
+summary(sex.M1)
+
+exp(coef(sex.M1)["Age.difference"])
+
+# likelihood ratio test to determine whether the random effect is necessary
+anova(sex.M0,sex.M1)
+
+# significant difference. random intercept model is more appropriate
+
+sex.M1$ranef
+
+# ICC
+icc = 1.318^2/(1.318^2 + pi^2/3)
+icc
+# 34.6% of the unexplained variation is at the participant level
+
+plot(Effect("Age.difference", sex.M1))
+
+tidysex.0 <- data.frame(Effect("Age.difference", sex.M1,
+                               xlevels = list(Age.difference = 50),
+                               latent = T))  
+
+ggplot(tidysex.0, aes(Age.difference, fit)) +
+  geom_line(color = "#009E73", size = 1.2) +
+  geom_ribbon(aes(ymin = lower, ymax = upper), fill = "#009E73", alpha = 0.25)
+
+png("sexfreq.png")
+
+# Extracting the effects generated using the effects function
+
+tidysex.1 <- Effect("Age.difference", sex.M1, 
+                    xlevels = list(Age.difference = 50)) %>% #default 5 values evaluated but now we want 50
+  data.frame() %>%
+  select(-matches("logit.")) %>% #removes logits
+  gather(var, value, - Age.difference) %>% # long format
+  separate(var, c("fit", "cond"), extra = "merge") %>%
+  mutate(cond = gsub("X", "", cond)) %>%
+  mutate(cond = gsub("prob.", "", cond) %>%
+           ordered(levels = c("1","between.2.5","between.6.10","more.than.10"))%>%
+           plyr::mapvalues(from = c("1","between.2.5","between.6.10","more.than.10"),
+                           to = sexlevels)) %>% 
+  spread(fit, value) 
+
+sex.1a <- tidysex.1 %>%
+  ggplot(aes(x = Age.difference, y = prob, fill = cond)) +
+  geom_area(position = position_stack(reverse = F)) +
+  xlab("Age difference") +
+  ylab("Probability") +
+  scale_fill_brewer(name = "Sex frequency", 
+                    palette = "Dark2")+
+  theme(axis.text.x = element_text(size=11),
+        axis.text.y = element_text(size=11)) +
+  theme(text=element_text( size=11)) 
+
+sex.1a
+ggsave("Sexfrequncy.png", width = 6.25, height = 5.25,dpi = 600)
+
+# Predicted effects on sex  frequency
+tidysex.1b <- OrdPred(sex.M1,"Age.difference",DT.sexdata.men)
+
+#VarPred(sex .M1,"Age.difference",DT.sexdata.men)
+
+sex.pred <- tidysex.1b %>%
+  ggplot(aes(x = Age.difference, y = fit)) +
+  geom_line(size = 1, color = "#009E73") +
+  geom_ribbon(aes(ymin = lwr, ymax = upr),
+              alpha = 0.25,
+              fill = "#009E73") +
+  xlab("Age difference") +
+  ylab("Sex frequency score") +
+  theme(axis.text.x = element_text(size=11),
+        axis.text.y = element_text(size=11)) +
+  theme(text=element_text( size=11)) 
+
+sex.pred
+
+# ** Step 3, regression spline model --------------------------
+
+# cumulative logit random intercept model
+
+start_time <- Sys.time()
+
+sex.M2 <- clmm(Sex.frequency ~ ns(Age.difference,df = 4) + (1|Uid),
+               #random =  Uid,
+               data = DT.sexdata.men,
+               #link = "logit", dont specify because effects dont work when specify
+               nAGQ = 7,
+               Hess = T) #if you need to call summary
+
+summary(sex.M2)
+
+end_time <- Sys.time()
+end_time - start_time
+
+plot(Effect("Age.difference", sex.M2))
+# Extracting the effects generated using the effects function
+
+tidysex.2 <- Effect("Age.difference", sex.M2, 
+                    xlevels = list(Age.difference = 50)) %>% #default 5 values evaluated but now we want 50
+  data.frame() %>%
+  select(-matches("logit.")) %>% #removes logits
+  gather(var, value, - Age.difference) %>% # long format
+  separate(var, c("fit", "cond"), extra = "merge") %>%
+  mutate(cond = gsub("X", "", cond)) %>%
+  mutate(cond = gsub("prob.", "", cond) %>%
+           ordered(levels = c("1","between.2.5","between.6.10","more.than.10"))%>%
+           plyr::mapvalues(from = c("1","between.2.5","between.6.10","more.than.10"),
+                           to = sexlevels)) %>% 
+  spread(fit, value) 
+
+sex.2a <- tidysex.2 %>%
+  ggplot(aes(x = Age.difference, y = prob, fill = cond)) +
+  geom_area(position = position_stack(reverse = F)) +
+  xlab("Age difference") +
+  ylab("Probability") +
+  scale_fill_brewer(name = "Sex frequency", 
+                    palette = "Dark2")+
+  theme(axis.text.x = element_text(size=11),
+        axis.text.y = element_text(size=11)) +
+  theme(text=element_text( size=11)) 
+
+sex.2a
+ggsave("Sexfrequency2.png", width = 6.25, height = 5.25,dpi = 600)
+
+# Predicted effects on sex frequency
+tidysex.2b <- OrdPred(sex.M2, "Age.difference",DT.sexdata.men)
+
+#VarPred(sex.M2,"Age.difference",DT.sexdata.men)
+
+sex.pred2 <- tidysex.2b %>%
+  ggplot(aes(x = Age.difference, y = fit)) +
+  geom_line(size = 1, color = "#009E73") +
+  geom_ribbon(aes(ymin = lwr, ymax = upr),
+              alpha = 0.25,
+              fill = "#009E73") +
+  xlab("Age difference") +
+  ylab("Condom use score") +
+  theme(axis.text.x = element_text(size=11),
+        axis.text.y = element_text(size=11)) +
+  theme(text=element_text( size=11)) 
+
+sex.pred2
+
+predictions <- predict.clmm(sex.M2,newdata = DT.sexdata.men,dof = 4)
+
+table(predictions$pred.cat)
+
+cv.clmm <- function(Data, X, Y, K = 10, seed = 1234, dof){
+  # A function that computes cross validation error for a clmm2 model with 4 df in the spline term
+  # create K folds using createFolds() function from caret
+  # first step is to create train and test data
+  # fit the model to the training set
+  # use the fitted model and test data to make predictions
+  # compare the predicted categories with the true categories to give you the test error(cv)
+  # repeat the process K times
+  # output a tibble with cv error for each df
+  
+  #Data = Data
+  cross.validation.err <- c()
+  degrees.freedom <- c()
+  set.seed(seed)
+  
+  for (j in 1:length(dof)) {
+    folds <- caret::createFolds(Data[[Y]], k = K, list = TRUE)
+    
+    test.error <- c() # create an empty vector
+    
+    for (i in seq_len(K)) {
+      DT.train.i <- Data[-folds[[i]],]
+      DT.test.i <- Data[folds[[i]],]
+      clmm.fit.i <- clmm(Partner.type ~ ns(Age.difference,df = dof[j]) + (1|Uid),
+                         data = DT.train.i,
+                         nAGQ = 7,
+                         Hess = T)
+      
+      predictions.i <- predict.clmm(clmm.fit.i,newdata = DT.test.i,dof = dof[j])
+      
+      test.error.i <- sum(DT.test.i[,Y] != predictions.i$pred.cat)/nrow(DT.test.i)
+      test.error[i] <- test.error.i
+    }
+    cross.validation.err[j] <- mean(test.error)
+    degrees.freedom[j] <- j
+  }
+  CV.dataframe <- dplyr::tibble(degrees.freedom,cross.validation.err)
+  return(CV.dataframe)
+}
+
+# debug(cv.clmm)
+mycv.sex <- cv.clmm(Data = DT.sexdata.men, X = "Age.difference", Y = "Sex.frequency", K = 10,dof = 1, seed = 1)
+plot(mycv, type = "l")
+
