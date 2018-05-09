@@ -6,56 +6,29 @@
 # load libraries
 # ==============
 library(tidyverse)
-library(data.table)
 library(lattice) #xyplot
 library(nlme) # fitting lmm
 # ==============
 # load data
 # ==============
-load("T1.agemix.Rdata")
+#load("~/Documents/shims_age_mixing/DT.Agemix.men.5.Rdata")
+
+load("/Users/emanuel/Dropbox/SHIMS Baseline data/DT.Agemix.men.Rdata")
 theme_set(theme_bw()) # set global plot theme
-# ====================
-# Data transformations
-# ====================
-
-# subset
-T1.agemixing <- T1.agemix %>% transmute(Uid,
-                                        Gender,
-                                        Age.res.p1,
-                                        Age.res.p2,
-                                        Age.res.p3,
-                                        Partner.age.p1,
-                                        Partner.age.p2,
-                                        Partner.age.p3,
-                                        Partner.type.p1,
-                                        Partner.type.p2,
-                                        Partner.type.p3)
-
-# convert to long format
-
-setDT(T1.agemixing) #convert to a data.table for easy manipulation
-
-DT.Agemix <- T1.agemixing %>% melt( measure = patterns("^Age.res", "^Partner.age", "^Partner.type"),
-                                   value.name = c("Participant.age", "Partner.age", "Partner.type"),
-                                   variable.name = "Partner") 
-as.tibble(DT.Agemix)
-
 
 # =========================
-# Exploratory data analysis
+# Subset and Exploratory data analysis
 # =========================
-# tidy dataset
-# Remove all data from respondents younger than 15 years old
-# Subtract 15 from all respondent ages, so that a respondent.age.at.relationship.formation” is
-# coded 0 for a man who started a relationship at age 15 years old.
-
-DT.Agemix.men <- DT.Agemix %>% 
-  filter(Gender == "Male" & Participant.age >= 15) %>% 
-  mutate(Participant.age = Participant.age - 15) %>% 
-  select(-Gender) %>% # drop redundant gender variable
-  drop_na()
+DT.Agemix.men <- select(DT.Agemix.men,
+                        "Uid",
+                        "Participant.age",  
+                        "Partner.age") %>% drop_na(Partner.age)
 
 summary(DT.Agemix.men)
+# men who reported 1,2,3 partner
+sum(table(DT.Agemix.men$Uid) == 1)
+sum(table(DT.Agemix.men$Uid) == 2)
+sum(table(DT.Agemix.men$Uid) == 3)
 
 # the distribution of the partner age: the response
 ggplot(DT.Agemix.men,aes(x= Partner.age)) +
@@ -63,18 +36,18 @@ ggplot(DT.Agemix.men,aes(x= Partner.age)) +
 
 boxplot(DT.Agemix.men$Partner.age, horizontal = T)
 
-# remove outliers (major = 3*IQR)
-DT.Agemix.men <- filter(DT.Agemix.men, Partner.age <= 37)
+# # remove extreme outliers (major = 3*IQR)
+# H = 3*IQR(DT.Agemix.men$Partner.age)
+# U = quantile(DT.Agemix.men$Partner.age, probs = 0.75) + H
+# L = quantile(DT.Agemix.men$Partner.age, probs = 0.25) - H
+# 
+# DT.Agemix.men <- filter(DT.Agemix.men, Partner.age >= L & Partner.age <= U)
 
 ggplot(DT.Agemix.men,aes(Participant.age,Partner.age)) +
   geom_jitter(size=3,color="black", width = 0.25, height = 0.25, alpha = 0.5) +
   xlab("Age") +
   ylab("Partner age")
 
-n_distinct(DT.Agemix.men$Uid) # to obtain the number of unique participants which will form the clusters
-
-# men who reported more than 1 partner
-sum(table(DT.Agemix.men$Uid)>1)
 
 # =======================
 # Random intercept model
@@ -90,9 +63,9 @@ agemix.M0 <- lme(Partner.age ~ 1,
 
 summary(agemix.M0)
 # null model helps us understand the structure of the data. Gives baseline AIC/BIC values
-ICC <- 1.410639^2/(1.410639^2 + 3.921109^2)
+ICC <- 2.88988^2/(2.88988^2 + 2.949837^2)
 ICC
-# ICC = 0.11 which means that the correlation of partner age score within an individual is 0.11
+# ICC = 0.49 which means that the correlation of partner age score within an individual is 0.11
 
 
 # fit a marginal model using gls
@@ -103,21 +76,21 @@ summary(agemix.M0.gls)
 
 # do a likelihood ratio test 
 anova(agemix.M0.gls, agemix.M0)
-# the result suggests that random participant effect should be retained (P < 0.05)
+# the result suggests that random participant effect should be retained (P < 0.0001)
 
-# ===================================
-# Step 2, adding level one covariate
-# ===================================
-agemix.M1 <- lme(Partner.age ~  Partner.type, 
-                         data = DT.Agemix.men,
-                         method = "REML",
-                         random = ~1|Uid)
-
-summary(agemix.M1)
-
-anova(update(agemix.M0, method= "ML"),update(agemix.M1, method= "ML"))
-# not significant so we keep our null model
-
+# # ===================================
+# # Step 2, adding level one covariate
+# # ===================================
+# agemix.M1 <- lme(Partner.age ~  Partner.type, 
+#                          data = DT.Agemix.men,
+#                          method = "REML",
+#                          random = ~1|Uid)
+# 
+# summary(agemix.M1)
+# 
+# anova(update(agemix.M0, method= "ML"),update(agemix.M1, method= "ML"))
+# # not significant so we keep our null model
+# 
 # =================================
 # Step 3, adding level 2 covariate
 # =================================
@@ -130,7 +103,7 @@ agemix.M2 <- lme(Partner.age ~  Participant.age,
 summary(agemix.M2)
 
 intervals(agemix.M2)
-ranef(agemix.M2) # to extract random effects from the model
+#ranef(agemix.M2) # to extract random effects from the model
 
 fixef(agemix.M2) # to extract the fixed effects estimates
 
@@ -180,25 +153,31 @@ heteroscedastic <- tibble(
 # plotting residuals against the fitted values - detecting heteroscedasticity
 
 ggplot(heteroscedastic, aes(fitted.M2, residuals.M2)) +
-  geom_point(shape = 21, color = "blue", size = 2.5)+
+  geom_point(size=3.5,color="black",alpha = 0.5)+
   geom_hline(yintercept = 0) +
   xlab("Fitted Values") +
-  ylab("Residuals") 
+  ylab("Residuals") +
+  theme(axis.text.x = element_text(size=11),
+        axis.text.y = element_text(size=11)) +
+  theme(text=element_text( size=11)) + 
   
-ggsave("detecthetero.png", width = 6.25, height = 5.25,dpi = 1200)
+ggsave("detecthetero.png", width = 6.25, height = 5.25,dpi = 600)
 
 # check why there is heteroscedasticity
 
 ggplot(heteroscedastic, aes(Participant.age, residuals.M2)) +
-  geom_point(shape = 21, color = "blue", size = 2.5) +
+  geom_point(size=3.5,color="black",alpha = 0.5) +
   geom_hline(yintercept = 0) +
   xlab("Participant age") +
   ylab("Residuals") +
   scale_x_continuous(labels = function(x)x+15, breaks = scales::pretty_breaks(n = 10)) +
   scale_y_continuous(breaks = scales::pretty_breaks(n = 5)) +
-  coord_fixed()
+  coord_fixed()+
+  theme(axis.text.x = element_text(size=11),
+        axis.text.y = element_text(size=11)) +
+  theme(text=element_text( size=11)) + 
 
-ggsave("detecthetero1.png", width = 6.25, height = 5.25,dpi = 1200)
+ggsave("detecthetero1.png", width = 6.25, height = 5.25,dpi = 600)
 
 # confirms that the within group variability increases with participant age 
 # var(eij) increases when participant age increases
@@ -266,7 +245,7 @@ ggplot(DT.Agemix.men,aes(Participant.age,Partner.age)) +
   xlab("Participant's age") +
   ylab("Partner's age") + 
   scale_x_continuous(labels = function(x)x+15, breaks = scales::pretty_breaks(n = 10)) +
-  scale_y_continuous(breaks = scales::pretty_breaks(n = 5)) +
+  scale_y_continuous(breaks = scales::pretty_breaks(n = 10)) +
   coord_fixed()+
   theme(axis.text.x = element_text(size=11),
         axis.text.y = element_text(size=11)) +
@@ -277,4 +256,52 @@ ggplot(DT.Agemix.men,aes(Participant.age,Partner.age)) +
   scale_colour_manual(name="Line Colour",
                       values=c("Population average" = "red", "Same age (x = y)" ="#1B9E77")) 
 
-ggsave("Agemixing.png", width = 6.25, height = 5.25,dpi = 1200)
+ggsave("Agemixing.png", width = 6.25, height = 5.25,dpi = 600)
+
+
+# function to compute within group error variance(standard deviation)
+
+sdij <- function(participant.age = 15){
+  sd = sqrt(agemix.M5[["sigma"]]^2 * (abs(participant.age-15 +1))^(2* as.numeric(agemix.M5[["modelStruct"]][["varStruct"]])))
+  return(sd)
+  }
+sdij(participant.age = 30)
+
+lci.15 = fixef(agemix.M5)[["(Intercept)"]] - 1.96 * sdij(participant.age = 15)
+uci.15 = fixef(agemix.M5)[["(Intercept)"]] + 1.96 * sdij(participant.age = 15)
+lci.30 = (fixef(agemix.M5)[["(Intercept)"]] + fixef(agemix.M5)[["Participant.age"]]*(30-15)) - (1.96 * sdij(participant.age = 30))
+uci.30 = (fixef(agemix.M5)[["(Intercept)"]] + fixef(agemix.M5)[["Participant.age"]]*(30-15)) + (1.96 * sdij(participant.age = 30))
+
+ci <- function(model = agemix.M5, participant.age = 15){
+  lci = (fixef(model)[["(Intercept)"]] + fixef(model)[["Participant.age"]]*(participant.age-15)) - (1.96 * sdij(participant.age))
+  uci = (fixef(model)[["(Intercept)"]] + fixef(model)[["Participant.age"]]*(participant.age-15)) + (1.96 * sdij(participant.age))
+  conf_int = data.frame(participant.age,lci, uci)
+  return(conf_int)
+}
+
+part <- seq(15,49,1)
+confint <- ci(model = agemix.M5, participant.age = part)
+
+ggplot(DT.Agemix.men,aes(Participant.age,Partner.age)) +
+  geom_jitter(size=3,color="black", width = 0.25, height = 0.25, alpha = 0.5) +
+  xlab("Participant's age") +
+  ylab("Partner's age") + 
+  scale_x_continuous(labels = function(x)x+15, breaks = scales::pretty_breaks(n = 10)) +
+  scale_y_continuous(breaks = scales::pretty_breaks(n = 10)) +
+  coord_fixed()+
+  theme(axis.text.x = element_text(size=11),
+        axis.text.y = element_text(size=11)) +
+  theme(text=element_text( size=11)) + 
+  geom_abline(aes(intercept = fixef(agemix.M5)[["(Intercept)"]],slope = fixef(agemix.M5)[["Participant.age"]], color = "Population average"),
+              size = 1.25) +
+  #geom_abline(aes(intercept = 15,slope =1,color = "Same age (x = y)"), size = 1.25) +
+  scale_colour_manual(name="Line Colour",
+                      values=c("Population average" = "red", "Same age (x = y)" ="#1B9E77"))+
+  geom_line(data = confint, aes(x=participant.age-15, y=lci), linetype = "dashed", color="blue") +
+  geom_line(data = confint, aes(x=participant.age-15, y=uci), linetype = "dashed", color="blue") +
+  geom_segment(aes(x=15-15, y = uci.15, xend = 15-15,yend=lci.15, color = "participant age = 15"), color = "blue")+
+  geom_segment(aes(x=30-15, y = uci.30, xend = 30-15,yend=lci.30), color = "blue")+
+  geom_point(aes(x=15-15,y=fixef(agemix.M5)[["(Intercept)"]]), size=4, color = "blue")+
+  geom_point(aes(x=30-15,y=fixef(agemix.M5)[["(Intercept)"]]+fixef(agemix.M5)[["Participant.age"]]*15), size=4, color = "blue")
+
+ggsave("AgemixingCI.png", width = 6.25, height = 5.25,dpi = 600)
