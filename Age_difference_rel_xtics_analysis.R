@@ -330,7 +330,7 @@ table(tidycond.3$pred.cat)
 
 # ** Cross validation --------------------------------------
 
-cv.clmm <- function(Data, K = 10, seed = 1234, dof){
+cv.clmm <- function(Data, X, Y, K = 10, seed = 1234, dof){
   # A function that computes cross validation error for a clmm2 model with 4 df in the spline term
   # create K folds using createFolds() function from caret
   # first step is to create train and test data
@@ -345,7 +345,7 @@ cv.clmm <- function(Data, K = 10, seed = 1234, dof){
   set.seed(seed)
   
   for (j in 1:length(dof)) {
-    folds <- caret::createFolds(Data$Condom.frequency, k = K, list = TRUE)
+    folds <- caret::createFolds(Data[[Y]], k = K, list = TRUE)
     
     test.error <- c() # create an empty vector
     
@@ -358,7 +358,8 @@ cv.clmm <- function(Data, K = 10, seed = 1234, dof){
                          Hess = T)
       
       predictions.i <- predict.clmm(clmm.fit.i,newdata = DT.test.i,dof = dof[j])
-      test.error.i <- sum(DT.test.i$Condom.frequency != predictions.i$pred.cat)/nrow(DT.test.i)
+      
+      test.error.i <- sum(DT.test.i[,Y] != predictions.i$pred.cat)/nrow(DT.test.i)
       test.error[i] <- test.error.i
     }
     cross.validation.err[j] <- mean(test.error)
@@ -372,7 +373,7 @@ cv.clmm <- function(Data, K = 10, seed = 1234, dof){
 degreesoffreedom <- c(1:20)
 
 start_time <- Sys.time()
-mycv <- cv.clmm(Data = DT.reldata.men, K = 10,dof = 1,seed = 1)
+mycv <- cv.clmm(Data = DT.reldata.men, X = "Age.difference", Y = "Condom.frequency", K = 10,dof = 1, seed = 1)
 plot(mycv, type = "l")
 end_time <- Sys.time()
 end_time - start_time
@@ -877,6 +878,6 @@ cv.clmm <- function(Data, X, Y, K = 10, seed = 1234, dof){
 }
 
 # debug(cv.clmm)
-mycv.sex <- cv.clmm(Data = DT.sexdata.men, X = "Age.difference", Y = "Sex.frequency", K = 10,dof = 1, seed = 1)
+mycv.sex <- cv.clmm(Data = DT.partdata.men, X = "Age.difference", Y = "Partner.type", K = 10,dof = 1, seed = 1)
 plot(mycv, type = "l")
 
