@@ -56,12 +56,12 @@ sum(table(DT.reldata.men$Uid) == 1)
 sum(table(DT.reldata.men$Uid) == 2)
 sum(table(DT.reldata.men$Uid) == 3)
 
-# # remove high leverage/influential points (major = 3*IQR)
-# H = 3*IQR(DT.reldata.men$Age.difference)
-# U = quantile(DT.reldata.men$Age.difference, probs = 0.75) + H
-# L = quantile(DT.reldata.men$Age.difference, probs = 0.25) - H
-# 
-# DT.reldata.men <- filter(DT.reldata.men, Age.difference >= L & Age.difference <= U)
+# remove high leverage/influential points (major = 3*IQR)
+H = 3*IQR(DT.reldata.men$Age.difference)
+U = quantile(DT.reldata.men$Age.difference, probs = 0.75) + H
+L = quantile(DT.reldata.men$Age.difference, probs = 0.25) - H
+
+DT.reldata.men <- filter(DT.reldata.men, Age.difference >= L & Age.difference <= U)
 
 # frequncies of the condom use levels
 ggplot(data = DT.reldata.men) +
@@ -451,7 +451,7 @@ anova(sex.M0,sex.M1)
 sex.M1$ranef
 
 # ICC
-icc = 1.318^2/(1.318^2 + pi^2/3)
+icc = 1.319^2/(1.319^2 + pi^2/3)
 icc
 # 34.6% of the unexplained variation is at the participant level
 
