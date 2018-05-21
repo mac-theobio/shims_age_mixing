@@ -36,12 +36,12 @@ ggplot(DT.Agemix.men,aes(x= Partner.age)) +
 
 boxplot(DT.Agemix.men$Partner.age, horizontal = T)
 
-# # remove extreme outliers (major = 3*IQR)
-# H = 3*IQR(DT.Agemix.men$Partner.age)
-# U = quantile(DT.Agemix.men$Partner.age, probs = 0.75) + H
-# L = quantile(DT.Agemix.men$Partner.age, probs = 0.25) - H
-# 
-# DT.Agemix.men <- filter(DT.Agemix.men, Partner.age >= L & Partner.age <= U)
+# remove extreme outliers (major = 3*IQR)
+H = 3*IQR(DT.Agemix.men$Partner.age)
+U = quantile(DT.Agemix.men$Partner.age, probs = 0.75) + H
+L = quantile(DT.Agemix.men$Partner.age, probs = 0.25) - H
+
+DT.Agemix.men <- filter(DT.Agemix.men, Partner.age >= L & Partner.age <= U)
 
 ggplot(DT.Agemix.men,aes(Participant.age,Partner.age)) +
   geom_jitter(size=3,color="black", width = 0.25, height = 0.25, alpha = 0.5) +
@@ -63,9 +63,9 @@ agemix.M0 <- lme(Partner.age ~ 1,
 
 summary(agemix.M0)
 # null model helps us understand the structure of the data. Gives baseline AIC/BIC values
-ICC <- 2.88988^2/(2.88988^2 + 2.949837^2)
+ICC <- as.numeric(VarCorr(agemix.M0)[1])/(as.numeric(VarCorr(agemix.M0)[1]) + as.numeric(VarCorr(agemix.M0)[2]))
 ICC
-# ICC = 0.49 which means that the correlation of partner age score within an individual is 0.11
+# ICC = 0.49 which means that the correlation of partner age score within an individual
 
 
 # fit a marginal model using gls
@@ -75,7 +75,7 @@ agemix.M0.gls <- gls(Partner.age ~ 1,
 summary(agemix.M0.gls)
 
 # do a likelihood ratio test 
-anova(agemix.M0.gls, agemix.M0)
+anova(update(agemix.M0, method= "ML"),update(agemix.M0.gls, method = "ML"))
 # the result suggests that random participant effect should be retained (P < 0.0001)
 
 # # ===================================
@@ -110,7 +110,7 @@ fixef(agemix.M2) # to extract the fixed effects estimates
 fitted(agemix.M2) # to obtain the fitted values
 
 coef(agemix.M2) # to obtain the coefficient for each participant
-
+VarCorr(agemix.M2)
 # to fit using Maximum likelihood use update and do a likelihood ratio test 
 anova(update(agemix.M0, method= "ML"), update(agemix.M2, method= "ML"))
 # the result suggests that the new model should be retained (P < 0.0001)
@@ -219,7 +219,7 @@ AIC(agemix.M4,agemix.M5)
  
 agemix.M6 <- lme(Partner.age~ Participant.age, 
                             data = DT.Agemix.men,method = "REML",
-                            weights = varConstPower(form = ~Participant.age, fixed = list(const =1)),
+                            weights = varConstPower(form = ~Participant.age, fixed = list(const = 1)),
                             random = ~1|Uid)
 
 summary(agemix.M6)

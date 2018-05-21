@@ -14,8 +14,8 @@ library(cowplot)    #plot_grid
 library(dotwhisker) #make dot whisker plots
 library(broom)      #convert objects into tidy data frame: tidy()
 library(visreg)     #getting "contrast" hazard ratios
-library(egg)        #devtools::install_github("baptiste/egg") #for plot management
-library(strcode)    #devtools::install_github("lorenzwalthert/strcode") #for code structuring with sub/headings
+# library(egg)        #devtools::install_github("baptiste/egg") #for plot management
+# library(strcode)    #devtools::install_github("lorenzwalthert/strcode") #for code structuring with sub/headings
 
 ## load data and functions
 
