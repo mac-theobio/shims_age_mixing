@@ -56,7 +56,7 @@ sum(table(DT.reldata.men$Uid) == 1)
 sum(table(DT.reldata.men$Uid) == 2)
 sum(table(DT.reldata.men$Uid) == 3)
 
-# # remove extreme outliers (major = 3*IQR)
+# # remove high leverage/influential points (major = 3*IQR)
 # H = 3*IQR(DT.reldata.men$Age.difference)
 # U = quantile(DT.reldata.men$Age.difference, probs = 0.75) + H
 # L = quantile(DT.reldata.men$Age.difference, probs = 0.25) - H
@@ -408,12 +408,12 @@ sum(table(DT.sexdata.men$Uid) == 1)
 sum(table(DT.sexdata.men$Uid) == 2)
 sum(table(DT.sexdata.men$Uid) == 3)
 
-# # remove extreme outliers (major = 3*IQR)
-# H = 3*IQR(DT.sexdata.men$Age.difference)
-# U = quantile(DT.sexdata.men$Age.difference, probs = 0.75) + H
-# L = quantile(DT.sexdata.men$Age.difference, probs = 0.25) - H
-# 
-# DT.sexdata.men <- filter(DT.sexdata.men, Age.difference >= L & Age.difference <= U)
+# remove high leverage/influential points (major = 3*IQR)
+H = 3*IQR(DT.sexdata.men$Age.difference)
+U = quantile(DT.sexdata.men$Age.difference, probs = 0.75) + H
+L = quantile(DT.sexdata.men$Age.difference, probs = 0.25) - H
+
+DT.sexdata.men <- filter(DT.sexdata.men, Age.difference >= L & Age.difference <= U)
 
 # sex frequncies levels
 ggplot(data = DT.sexdata.men) +
@@ -659,7 +659,7 @@ sum(table(DT.sexdata.men$Uid) == 1)
 sum(table(DT.sexdata.men$Uid) == 2)
 sum(table(DT.sexdata.men$Uid) == 3)
 
-# # remove extreme outliers (major = 3*IQR)
+# # remove high leverage/influential points (major = 3*IQR)
 # H = 3*IQR(DT.sexdata.men$Age.difference)
 # U = quantile(DT.sexdata.men$Age.difference, probs = 0.75) + H
 # L = quantile(DT.sexdata.men$Age.difference, probs = 0.25) - H
