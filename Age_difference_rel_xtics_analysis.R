@@ -627,8 +627,8 @@ cv.clmm <- function(Data, X, Y, K = 10, seed = 1234, dof){
 }
 
 # debug(cv.clmm)
-mycv.sex <- cv.clmm(Data = DT.sexdata.men, X = "Age.difference", Y = "Sex.frequency", K = 10,dof = 1, seed = 1)
-plot(mycv, type = "l")
+mycv.sex <- cv.clmm(Data = DT.sexdata.men, X = "Age.difference", Y = "Sex.frequency", K = 10,dof = degreesoffreedom, seed = 1)
+plot(mycv.sex, type = "l")
 
 # Partner Type Analysis -----------------------------------------------------
 # ** Subset and Exploratory data analysis -----------------------------------
