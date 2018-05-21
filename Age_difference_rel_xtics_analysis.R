@@ -225,7 +225,7 @@ cond.pred
 
 start_time <- Sys.time()
 
-condom.M2 <- clmm(Condom.frequency ~ ns(Age.difference,df = 4) + (1|Uid),
+condom.M2 <- clmm(Condom.frequency ~ ns(Age.difference,df = 2) + (1|Uid),
                    #random =  Uid,
                    data = DT.reldata.men,
                    #link = "logit", dont specify because effects dont work when specify
@@ -378,7 +378,7 @@ plot(mycv, type = "l")
 end_time <- Sys.time()
 end_time - start_time
 
-
+# Based on the cross validation output we set degrees of freedom = 2 in condom.M2
 # Sex Frequency Analysis -----------------------------------------------------
 # ** Subset and Exploratory data analysis -----------------------------------
 
