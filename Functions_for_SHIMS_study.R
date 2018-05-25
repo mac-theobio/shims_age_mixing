@@ -225,3 +225,31 @@ OrdPred <- function(mod, n, modAns){
   return(v)
 }
 
+# A fuction to predict the output categories when you have a spline clmm
+# In this case, the spline is on the age difference term only
+predict.clmm <- function(model, newdata, dof=4){
+  
+  # Actual prediction function
+  pred <- function(eta, theta, cat = 1:(length(theta) + 1)) {
+    Theta <- c(-1000000, theta, 1000000)
+    preds <- sapply(cat, function(j) plogis(Theta[j + 1] - eta) - plogis(Theta[j] - eta))
+    return(preds)
+  }
+  
+  theta_j <- model$Theta    # obtain the thresholds from the model
+  
+  betas <- model[["beta"]]
+  X1 <- newdata$Age.difference # vector of predictor variable
+  XX <- ns(X1, df=dof)
+  Xbetas <- sweep(XX, MARGIN=2, betas, FUN = "*")
+  
+  eta_j <- rowSums(Xbetas)
+  
+  # Make predictions
+  pred.mat <- data.frame(pred(eta=eta_j, theta=theta_j))
+  colnames(pred.mat) <- model[["y.levels"]]
+  pred.mat <- cbind(pred.mat, pred.cat=colnames(pred.mat)[apply(pred.mat, 1, which.max)])
+  pred.mat$pred.cat <- ordered(pred.mat$pred.cat, levels = model[["y.levels"]])
+  
+  return(pred.mat)
+}
