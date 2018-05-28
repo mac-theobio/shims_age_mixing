@@ -881,15 +881,16 @@ DT.partnerdata.men.gamm$Partner.type <- as.numeric(DT.partnerdata.men.gamm$Partn
 # Random intercepts are coded by including a smooth over the grouping variable with the
 # smoothing class specified as bs="re".
 
-gam.Partner <- bam(Partner.type ~ s(Age.difference, bs="cr", k = 10) + s(Uid, bs="re"), # penalized cubic regression splines
+gam.Partner <- gam(Partner.type ~ s(Age.difference, bs="cr", k = 10) + s(Uid, bs="re"), # penalized cubic regression splines
                    data = DT.partnerdata.men.gamm,
                    family = ocat(R = 3),
                    method = "fRELM") #fREML is much faster and yields similar results like RELM
                    
 
 gam.Partner
+save(gam.Partner, file ="/Users/emanuel/Dropbox/SHIMS Baseline data/gam.Partner.Rdata")
 summary(gam.Partner)
-coef(gam.Partner) ## estimated coefficients
+coef(gam.Partner) ## estimated coefficients, edf=5
 
 gam.check(gam.Partner)
 
