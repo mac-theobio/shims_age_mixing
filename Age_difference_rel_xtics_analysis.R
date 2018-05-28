@@ -14,8 +14,9 @@ library(cowplot)    #plot_grid
 library(dotwhisker) #make dot whisker plots
 library(broom)      #convert objects into tidy data frame: tidy()
 library(visreg)     #getting "contrast" hazard ratios
-# library(egg)        #devtools::install_github("baptiste/egg") #for plot management
-# library(strcode)    #devtools::install_github("lorenzwalthert/strcode") #for code structuring with sub/headings
+library(mgcv)       #for fitting GAMs
+# library(egg)      #devtools::install_github("baptiste/egg") #for plot management
+# library(strcode)  #devtools::install_github("lorenzwalthert/strcode") #for code structuring with sub/headings
 
 ## load data and functions
 
@@ -867,9 +868,99 @@ plot(mycv.partner, type = "l")
 # Based on the cross validation output we set degrees of freedom = 3 in partner.M2
 
 
-# Implementing GAMMs for comparision partner type model -----------------------------------
+
+# Implementing GAMMs for comparision: condom use model -----------------------------------
+
+# Response should be integer class labels
+DT.reldata.men.gamm <- DT.reldata.men
+levels(DT.reldata.men.gamm$Condom.frequency) <- c(1,2,3)
+DT.reldata.men.gamm$Condom.frequency <- as.numeric(DT.reldata.men.gamm$Condom.frequency)
+
+
+# with random effects(basic model) 
+# Random intercepts are coded by including a smooth over the grouping variable with the
+# smoothing class specified as bs="re".
+start_time <- Sys.time()
+gam.Condom <- bam(Condom.frequency ~ s(Age.difference, bs="cr", k = 10) + s(Uid, bs="re"), # penalized cubic regression splines
+                 data = DT.reldata.men.gamm,
+                 family = ocat(R = 3),
+                 method = "fREML", #fREML is much faster and yields similar results like RELM
+                 nthreads = 4,
+                 discrete = T)
+
+end_time <- Sys.time()
+end_time - start_time
+
+gam.Condom
+save(gam.Condom, file ="/Users/emanuel/Dropbox/SHIMS Baseline data/gam.Condom.Rdata")
+# load("/Users/emanuel/Dropbox/SHIMS Baseline data/gam.Condom.Rdata")
+summary(gam.Condom)
+coef(gam.Condom) ## estimated coefficients, edf=5
+
+gam.check(gam.Condom)
+
+plot(gam.Condom, residuals = T)
+
+predict.gam(gam.Condom, type = "response")
+
+# adjusting for number of partners
+start_time <- Sys.time()
+gam.Condom.adj <- bam(Condom.frequency ~ s(Age.difference, bs="cr", k = 10) + s(No.partners, bs="cr", k = 10) + s(Uid, bs="re"), # penalized cubic regression splines
+                       data = DT.reldata.men.gamm,
+                       family = ocat(R = 3),
+                       method = "fREML", #fREML is much faster and yields similar results like RELM
+                       nthreads = 4,
+                       discrete = T)
+
+end_time <- Sys.time()
+end_time - start_time
+gam.Condom.adj
+save(gam.Condom.adj, file ="/Users/emanuel/Dropbox/SHIMS Baseline data/gam.Condom.adj.Rdata")
+# load("/Users/emanuel/Dropbox/SHIMS Baseline data/gam.Condom.adj.Rdata")
+
+# Implementing GAMMs for comparision: Sex frequency model -----------------------------------
+
+# Response should be integer class labels
+DT.sexdata.men.gamm <- DT.sexdata.men
+levels(DT.sexdata.men.gamm$Partner.type) <- c(1,2,3,4)
+DT.sexdata.men.gamm.gamm$Partner.type <- as.numeric(DT.sexdata.men.gamm$Partner.type)
+
+
+# with random effects(basic model) 
+# Random intercepts are coded by including a smooth over the grouping variable with the
+# smoothing class specified as bs="re".
+start_time <- Sys.time()
+gam.Sex <- bam(Sex.frequency ~ s(Age.difference, bs="cr", k = 10) + s(Uid, bs="re"), # penalized cubic regression splines
+                   data = DT.sexdata.men.gamm,
+                   family = ocat(R = 3),
+                   method = "fREML", #fREML is much faster and yields similar results like RELM
+                   nthreads = 4,
+                   discrete = T)
+
+end_time <- Sys.time()
+end_time - start_time
+
+gam.Sex
+save(gam.Sex, file ="/Users/emanuel/Dropbox/SHIMS Baseline data/gam.Sex.Rdata")
+# load("/Users/emanuel/Dropbox/SHIMS Baseline data/gam.Sex.Rdata")
+
+# adjusting for number of partners
+start_time <- Sys.time()
+gam.Sex.adj <- bam(Sex.frequency ~ s(Age.difference, bs="cr", k = 10) + s(No.partners, bs="cr", k = 10) + s(Uid, bs="re"), # penalized cubic regression splines
+                       data = DT.sexdata.men.gamm,
+                       family = ocat(R = 3),
+                       method = "fREML", #fREML is much faster and yields similar results like RELM
+                       nthreads = 4,
+                       discrete = T)
+
+end_time <- Sys.time()
+end_time - start_time
+gam.Sex.adj
+save(gam.Sex.adj, file ="/Users/emanuel/Dropbox/SHIMS Baseline data/gam.Sex.adj.Rdata")
+# load("/Users/emanuel/Dropbox/SHIMS Baseline data/gam.Sex.adj.Rdata")
+
+# Implementing GAMMs for comparision: partner type model -----------------------------------
 # Generalized additive mixed models
-library(mgcv)
 
 # Response should be integer class labels
 DT.partnerdata.men.gamm <- DT.partnerdata.men 
@@ -880,23 +971,32 @@ DT.partnerdata.men.gamm$Partner.type <- as.numeric(DT.partnerdata.men.gamm$Partn
 # with random effects(basic model) 
 # Random intercepts are coded by including a smooth over the grouping variable with the
 # smoothing class specified as bs="re".
-
-gam.Partner <- gam(Partner.type ~ s(Age.difference, bs="cr", k = 10) + s(Uid, bs="re"), # penalized cubic regression splines
+start_time <- Sys.time()
+gam.Partner <- bam(Partner.type ~ s(Age.difference, bs="cr", k = 10) + s(Uid, bs="re"), # penalized cubic regression splines
                    data = DT.partnerdata.men.gamm,
                    family = ocat(R = 3),
-                   method = "fRELM") #fREML is much faster and yields similar results like RELM
-                   
+                   method = "fREML", #fREML is much faster and yields similar results like RELM
+                   nthreads = 4,
+                   discrete = T)
+
+end_time <- Sys.time()
+end_time - start_time
 
 gam.Partner
 save(gam.Partner, file ="/Users/emanuel/Dropbox/SHIMS Baseline data/gam.Partner.Rdata")
-summary(gam.Partner)
-coef(gam.Partner) ## estimated coefficients, edf=5
+# load("/Users/emanuel/Dropbox/SHIMS Baseline data/gam.Partner.Rdata")
 
-gam.check(gam.Partner)
+# adjusting for number of partners
+start_time <- Sys.time()
+gam.Partner.adj <- bam(Partner.type ~ s(Age.difference, bs="cr", k = 10) + s(No.partners, bs="cr", k = 10) + s(Uid, bs="re"), # penalized cubic regression splines
+                       data = DT.partnerdata.men.gamm,
+                       family = ocat(R = 3),
+                       method = "fREML", #fREML is much faster and yields similar results like RELM
+                       nthreads = 4,
+                       discrete = T)
 
-plot(gam.Partner, residuals = T)
-
-predict.gam(gam.Partner, type = "response")
-
-
-
+end_time <- Sys.time()
+end_time - start_time
+gam.Partner.adj
+save(gam.Partner.adj, file ="/Users/emanuel/Dropbox/SHIMS Baseline data/gam.Partner.adj.Rdata")
+# load("/Users/emanuel/Dropbox/SHIMS Baseline data/gam.Partner.adj.Rdata")
