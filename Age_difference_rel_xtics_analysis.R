@@ -922,8 +922,8 @@ save(gam.Condom.adj, file ="/Users/emanuel/Dropbox/SHIMS Baseline data/gam.Condo
 
 # Response should be integer class labels
 DT.sexdata.men.gamm <- DT.sexdata.men
-levels(DT.sexdata.men.gamm$Partner.type) <- c(1,2,3,4)
-DT.sexdata.men.gamm.gamm$Partner.type <- as.numeric(DT.sexdata.men.gamm$Partner.type)
+levels(DT.sexdata.men.gamm$Sex.frequency) <- c(1,2,3,4)
+DT.sexdata.men.gamm$Sex.frequency <- as.numeric(DT.sexdata.men.gamm$Sex.frequency)
 
 
 # with random effects(basic model) 
@@ -932,7 +932,7 @@ DT.sexdata.men.gamm.gamm$Partner.type <- as.numeric(DT.sexdata.men.gamm$Partner.
 start_time <- Sys.time()
 gam.Sex <- bam(Sex.frequency ~ s(Age.difference, bs="cr", k = 10) + s(Uid, bs="re"), # penalized cubic regression splines
                    data = DT.sexdata.men.gamm,
-                   family = ocat(R = 3),
+                   family = ocat(R = 4),
                    method = "fREML", #fREML is much faster and yields similar results like RELM
                    nthreads = 4,
                    discrete = T)
@@ -948,7 +948,7 @@ save(gam.Sex, file ="/Users/emanuel/Dropbox/SHIMS Baseline data/gam.Sex.Rdata")
 start_time <- Sys.time()
 gam.Sex.adj <- bam(Sex.frequency ~ s(Age.difference, bs="cr", k = 10) + s(No.partners, bs="cr", k = 10) + s(Uid, bs="re"), # penalized cubic regression splines
                        data = DT.sexdata.men.gamm,
-                       family = ocat(R = 3),
+                       family = ocat(R = 4),
                        method = "fREML", #fREML is much faster and yields similar results like RELM
                        nthreads = 4,
                        discrete = T)
