@@ -899,6 +899,7 @@ coef(gam.Condom) ## estimated coefficients, edf=5
 
 gam.check(gam.Condom)
 
+plot(gam.Condom)
 plot(gam.Condom, residuals = T)
 
 predict.gam(gam.Condom, type = "response")
