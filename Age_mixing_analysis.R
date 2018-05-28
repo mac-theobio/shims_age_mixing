@@ -102,6 +102,8 @@ agemix.M2 <- lme(Partner.age ~  Participant.age,
 
 summary(agemix.M2)
 
+plot(agemix.M2)
+
 intervals(agemix.M2)
 #ranef(agemix.M2) # to extract random effects from the model
 
