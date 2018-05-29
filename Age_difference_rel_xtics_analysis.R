@@ -42,7 +42,7 @@ DT.reldata.men <- DT.Agemix.men %>%
             Age.difference,
             Condom.frequency = ordered(Condom.frequency, levels = freqlevels),
             Money.gifts = ordered(Money.gifts, levels = freqlevels)) %>% 
-  drop_na(Age.difference,Condom.frequency)
+  drop_na(Age.difference,Condom.frequency,No.partners)
 
 summary(DT.reldata.men)
 
@@ -64,6 +64,9 @@ DT.reldata.men <- filter(DT.reldata.men, Age.difference >= L & Age.difference <=
 # The three condom use levels have a similar age difference
 plot(Age.difference ~ Condom.frequency,
      data = DT.reldata.men)
+
+# mean of age differences in the 3 categories
+tapply(DT.reldata.men$Age.difference, DT.reldata.men$Condom.frequency, mean)
 
 # sex frequncies levels
 ggplot(data = DT.reldata.men) +
@@ -284,7 +287,7 @@ ggsave("Condompred2.png", width = 6.25, height = 5.25,dpi = 600)
 
 # ** Step 4, adjusted regression spline model--------------------------------------
 
-condom.M3 <- clmm(Condom.frequency ~ ns(Age.difference,df = 5) + ns(Participant.age, df = )+ ns(No.partners, df = 5) + (1|Uid),
+condom.M3 <- clmm(Condom.frequency ~ ns(Age.difference,df = 4) + ns(Participant.age, df = 3) + No.partners + (1|Uid),
                   #random =  Uid,
                   data = DT.reldata.men,
                   #link = "logit", dont specify because effects dont work when specify
@@ -322,7 +325,7 @@ ggsave("Condomuse3a.png", width = 6.25, height = 5.25,dpi = 600)
 # Predicted effects and plot
 Predictions.condom.M3a <- OrdPred(condom.M3,"Age.difference",DT.reldata.men)
 
-Predictions.condom.M3a.plot <- Predictions.condom.M2a %>%
+Predictions.condom.M3a.plot <- Predictions.condom.M3a %>%
   ggplot(aes(x = Age.difference, y = fit)) +
   geom_line(size = 1, color = "#009E73") +
   geom_ribbon(aes(ymin = lwr, ymax = upr),
@@ -339,10 +342,10 @@ ggsave("Condompred3a.png", width = 6.25, height = 5.25,dpi = 600)
 
 # (ii) Age of participant effect
 Effects.condom.M3b <- Effect("Participant.age", condom.M3, 
-                      xlevels = list(Age.participant = 50)) %>%
+                      xlevels = list(Participant.age = 50)) %>%
   data.frame() %>%
   select(-matches("logit.")) %>%
-  gather(var, value, - Age.participant) %>%
+  gather(var, value, - Participant.age) %>%
   separate(var, c("fit", "cond"), extra = "merge") %>%
   mutate(cond = gsub("prob.", "", cond) %>%
            ordered(levels = freqlevels))%>%
@@ -350,22 +353,23 @@ Effects.condom.M3b <- Effect("Participant.age", condom.M3,
 
 Effects.condom.M3b.plot <- Effects.condom.M3b %>%
   ggplot(aes(x = Participant.age, y = prob, fill = cond)) +
-  geom_area() +
-  xlab("Age") +
+  geom_area(position = position_stack(reverse = T)) +
+  xlab("Participant Age") +
   ylab("Probability") +
   scale_fill_brewer(name = "Condom use", 
                     palette = "Dark2")+
   theme(axis.text.x = element_text(size=11),
         axis.text.y = element_text(size=11)) +
-  theme(text=element_text( size=11)) 
+  theme(text=element_text( size=11)) +
+  scale_x_continuous(labels = function(x)x+15, breaks = scales::pretty_breaks(n = 10)) 
 
 Effects.condom.M3b.plot
 ggsave("Condomuse3b.png", width = 6.25, height = 5.25,dpi = 600)
 
 # Predicted effects and plot
-Predictions.condom.M3b.plot <- OrdPred(Condom.M3,"Participant.age",DT.reldata.men)
+Predictions.condom.M3b <- OrdPred(condom.M3,"Participant.age",DT.reldata.men)
 
-cond.pred3b <- tidycond.3bb %>%
+Predictions.condom.M3b.plot <- Predictions.condom.M3b %>%
   ggplot(aes(x = Participant.age, y = fit)) +
   geom_line(size = 1, color = "#009E73") +
   geom_ribbon(aes(ymin = lwr, ymax = upr),
@@ -375,7 +379,8 @@ cond.pred3b <- tidycond.3bb %>%
   ylab("Condom use score") +
   theme(axis.text.x = element_text(size=11),
         axis.text.y = element_text(size=11)) +
-  theme(text=element_text( size=11)) 
+  theme(text=element_text( size=11)) +
+  scale_x_continuous(labels = function(x)x+15, breaks = scales::pretty_breaks(n = 10)) 
 
 Predictions.condom.M3b.plot
 ggsave("Condompred3b.png", width = 6.25, height = 5.25,dpi = 600)
@@ -451,7 +456,7 @@ DT.sexdata.men <- DT.Agemix.men %>%
             Age.difference,
             Sex.frequency = ordered(Sex.frequency, levels = sexlevels),
             Money.gifts = ordered(Money.gifts, levels = freqlevels)) %>% 
-  drop_na(Age.difference,Sex.frequency)
+  drop_na(Age.difference,Sex.frequency,No.partners)
 
 summary(DT.sexdata.men)
 
@@ -578,26 +583,17 @@ ggsave("Sexpred.png", width = 6.25, height = 5.25,dpi = 600)
 
 # ** Step 3, regression spline model --------------------------
 
-# cumulative logit random intercept model
-
-start_time <- Sys.time()
-
-sex.M2 <- clmm(Sex.frequency ~ ns(Age.difference,df = 6) + (1|Uid),
-                  #random =  Uid,
+sex.M2 <- clmm(Sex.frequency ~ ns(Age.difference,df = 5) + (1|Uid),
                   data = DT.sexdata.men,
-                  #link = "logit", dont specify because effects dont work when specify
                   nAGQ = 7,
                   Hess = T) #if you need to call summary
 
 summary(sex.M2)
 
-end_time <- Sys.time()
-end_time - start_time
-
 plot(Effect("Age.difference", sex.M2))
 # Extracting the effects generated using the effects function
 
-tidysex.2 <- Effect("Age.difference", sex.M2, 
+Effects.sex.M2 <- Effect("Age.difference", sex.M2, 
                      xlevels = list(Age.difference = 50)) %>% #default 5 values evaluated but now we want 50
   data.frame() %>%
   select(-matches("logit.")) %>% #removes logits
@@ -610,7 +606,7 @@ tidysex.2 <- Effect("Age.difference", sex.M2,
                            to = sexlevels)) %>% 
   spread(fit, value) 
 
-sex.2a <- tidysex.2 %>%
+Effects.sex.M2.plot <- Effects.sex.M2 %>%
   ggplot(aes(x = Age.difference, y = prob, fill = cond)) +
   geom_area(position = position_stack(reverse = F)) +
   xlab("Age difference") +
@@ -621,32 +617,137 @@ sex.2a <- tidysex.2 %>%
         axis.text.y = element_text(size=11)) +
   theme(text=element_text( size=11)) 
 
-sex.2a
+Effects.sex.M2.plot
 ggsave("Sexfrequency2.png", width = 6.25, height = 5.25,dpi = 600)
 
 # Predicted effects on sex frequency
-tidysex.2b <- OrdPred(sex.M2, "Age.difference",DT.sexdata.men)
+Predictions.sex.M2 <- OrdPred(sex.M2, "Age.difference",DT.sexdata.men)
 
 #VarPred(sex.M2,"Age.difference",DT.sexdata.men)
 
-sex.pred2 <- tidysex.2b %>%
+Predictions.sex.M2.plot <- Predictions.sex.M2 %>%
   ggplot(aes(x = Age.difference, y = fit)) +
   geom_line(size = 1, color = "#009E73") +
   geom_ribbon(aes(ymin = lwr, ymax = upr),
               alpha = 0.25,
               fill = "#009E73") +
   xlab("Age difference") +
-  ylab("Condom use score") +
+  ylab("Sex Frequency Score") +
   theme(axis.text.x = element_text(size=11),
         axis.text.y = element_text(size=11)) +
   theme(text=element_text( size=11)) 
 
-sex.pred2
+Predictions.sex.M2.plot
 ggsave("Sexpred2.png", width = 6.25, height = 5.25,dpi = 600)
 
 predictions <- predict.clmm(sex.M2,newdata = DT.sexdata.men,dof = 6)
-
 table(predictions$pred.cat)
+
+# ** Step 4, adjusted regression spline model--------------------------------------
+
+sex.M3 <- clmm(Sex.frequency ~ ns(Age.difference,df = 3) + ns(Participant.age, df = 4)+ No.partners + (1|Uid),
+               data = DT.sexdata.men,
+               nAGQ = 7,
+               Hess = T) #if you need to call summary
+
+summary(sex.M3)
+
+# (i) Age difference effect
+
+Effects.sex.M3a <- Effect("Age.difference", sex.M3, 
+                         xlevels = list(Age.difference = 50)) %>% #default 5 values evaluated but now we want 50
+  data.frame() %>%
+  select(-matches("logit.")) %>% #removes logits
+  gather(var, value, - Age.difference) %>% # long format
+  separate(var, c("fit", "cond"), extra = "merge") %>%
+  mutate(cond = gsub("X", "", cond)) %>%
+  mutate(cond = gsub("prob.", "", cond) %>%
+           ordered(levels = c("1","between.2.5","between.6.10","more.than.10"))%>%
+           plyr::mapvalues(from = c("1","between.2.5","between.6.10","more.than.10"),
+                           to = sexlevels)) %>% 
+  spread(fit, value) 
+
+Effects.sex.M3a.plot <- Effects.sex.M3a %>%
+  ggplot(aes(x = Age.difference, y = prob, fill = cond)) +
+  geom_area(position = position_stack(reverse = F)) +
+  xlab("Age difference") +
+  ylab("Probability") +
+  scale_fill_brewer(name = "Sex frequency", 
+                    palette = "Dark2")+
+  theme(axis.text.x = element_text(size=11),
+        axis.text.y = element_text(size=11)) +
+  theme(text=element_text( size=11)) 
+
+Effects.sex.M3a.plot
+ggsave("Sexfrequency3a.png", width = 6.25, height = 5.25,dpi = 600)
+
+# Predicted effects on sex frequency
+Predictions.sex.M3a <- OrdPred(sex.M3, "Age.difference",DT.sexdata.men)
+
+Predictions.sex.M3a.plot <- Predictions.sex.M3a %>%
+  ggplot(aes(x = Age.difference, y = fit)) +
+  geom_line(size = 1, color = "#009E73") +
+  geom_ribbon(aes(ymin = lwr, ymax = upr),
+              alpha = 0.25,
+              fill = "#009E73") +
+  xlab("Age difference") +
+  ylab("Sex Frequency Score") +
+  theme(axis.text.x = element_text(size=11),
+        axis.text.y = element_text(size=11)) +
+  theme(text=element_text( size=11)) 
+
+Predictions.sex.M3a.plot
+ggsave("Sexpred3a.png", width = 6.25, height = 5.25,dpi = 600)
+
+# (i) Participant age effect
+
+Effects.sex.M3b <- Effect("Participant.age", sex.M3, 
+                          xlevels = list(Participant.age = 50)) %>% #default 5 values evaluated but now we want 50
+  data.frame() %>%
+  select(-matches("logit.")) %>% #removes logits
+  gather(var, value, - Participant.age) %>% # long format
+  separate(var, c("fit", "cond"), extra = "merge") %>%
+  mutate(cond = gsub("X", "", cond)) %>%
+  mutate(cond = gsub("prob.", "", cond) %>%
+           ordered(levels = c("1","between.2.5","between.6.10","more.than.10"))%>%
+           plyr::mapvalues(from = c("1","between.2.5","between.6.10","more.than.10"),
+                           to = sexlevels)) %>% 
+  spread(fit, value) 
+
+Effects.sex.M3b.plot <- Effects.sex.M3b %>%
+  ggplot(aes(x = Participant.age, y = prob, fill = cond)) +
+  geom_area(position = position_stack(reverse = F)) +
+  xlab("Participant age") +
+  ylab("Probability") +
+  scale_fill_brewer(name = "Sex frequency", 
+                    palette = "Dark2")+
+  theme(axis.text.x = element_text(size=11),
+        axis.text.y = element_text(size=11)) +
+  theme(text=element_text( size=11)) +
+  scale_x_continuous(labels = function(x)x+15, breaks = scales::pretty_breaks(n = 10)) 
+
+
+Effects.sex.M3b.plot
+ggsave("Sexfrequency3b.png", width = 6.25, height = 5.25,dpi = 600)
+
+# Predicted effects on sex frequency
+Predictions.sex.M3b <- OrdPred(sex.M3, "Participant.age",DT.sexdata.men)
+
+Predictions.sex.M3b.plot <- Predictions.sex.M3b %>%
+  ggplot(aes(x = Participant.age, y = fit)) +
+  geom_line(size = 1, color = "#009E73") +
+  geom_ribbon(aes(ymin = lwr, ymax = upr),
+              alpha = 0.25,
+              fill = "#009E73") +
+  xlab("Participant age") +
+  ylab("Sex Frequency Score") +
+  theme(axis.text.x = element_text(size=11),
+        axis.text.y = element_text(size=11)) +
+  theme(text=element_text( size=11)) +
+  scale_x_continuous(labels = function(x)x+15, breaks = scales::pretty_breaks(n = 10)) 
+
+Predictions.sex.M3b.plot
+ggsave("Sexpred3b.png", width = 6.25, height = 5.25,dpi = 600)
 
 cv.clmm <- function(Data, X, Y, K = 10, seed = 1234, dof){
   # A function that computes cross validation error for a clmm2 model with 4 df in the spline term
