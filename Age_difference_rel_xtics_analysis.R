@@ -38,6 +38,7 @@ partlevels = c("casual partner","regular partner","husband/wife")
 DT.reldata.men <- DT.Agemix.men %>% 
   transmute(Uid = as.factor(Uid),
             No.partners,
+            Participant.age,
             Age.difference,
             Condom.frequency = ordered(Condom.frequency, levels = freqlevels),
             Money.gifts = ordered(Money.gifts, levels = freqlevels)) %>% 
@@ -446,6 +447,7 @@ sexlevels = c("1","between 2-5","between 6-10","more than 10")
 DT.sexdata.men <- DT.Agemix.men %>% 
   transmute(Uid = as.factor(Uid),
             No.partners,
+            Participant.age,
             Age.difference,
             Sex.frequency = ordered(Sex.frequency, levels = sexlevels),
             Money.gifts = ordered(Money.gifts, levels = freqlevels)) %>% 
@@ -705,6 +707,7 @@ partlevels = c("casual partner","regular partner","husband/wife")
 DT.partnerdata.men <- DT.Agemix.men %>% 
   transmute(Uid = as.factor(Uid),
             No.partners,
+            Participant.age,
             Age.difference,
             Partner.type = ordered(Partner.type, levels = partlevels),
             Money.gifts = ordered(Money.gifts, levels = freqlevels)) %>% 
@@ -1025,7 +1028,8 @@ save(gam.Sex, file ="/Users/emanuel/Dropbox/SHIMS Baseline data/gam.Sex.Rdata")
 
 # adjusting for number of partners
 start_time <- Sys.time()
-gam.Sex.adj <- bam(Sex.frequency ~ s(Age.difference, bs="cr", k = 10) + s(No.partners, bs="cr", k = 10) + s(Uid, bs="re"), # penalized cubic regression splines
+gam.Sex.adj <- bam(Sex.frequency ~ s(Age.difference, bs="cr", k = 10) + s(No.partners, bs="cr", k = 10) + 
+                     s(No.partners, bs="cr", k = 10) + s(Uid, bs="re"), # penalized cubic regression splines
                        data = DT.sexdata.men.gamm,
                        family = ocat(R = 4),
                        method = "fREML", #fREML is much faster and yields similar results like RELM
