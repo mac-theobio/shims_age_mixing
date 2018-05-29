@@ -19,7 +19,7 @@ library(mgcv)       #for fitting GAMs
 ## load data and functions
 
 #load("~/Documents/shims_age_mixing/DT.Agemix.men.5.Rdata") # 5% random sample
-load("/Users/emanuel/Dropbox/SHIMS Baseline data/DT.Agemix.men.Rdata") # full dataset
+load("/Users/emanuel/Google Drive/SHIMS/SHIMS Baseline data/DT.Agemix.men.Rdata") # full dataset
 theme_set(theme_bw()) # set global plot theme 
 source("Functions_for_SHIMS_study.R")
 
@@ -427,7 +427,7 @@ degreesoffreedom <- c(1:20)
 start_time <- Sys.time()
 mycv <- cv.clmm(Data = DT.reldata.men, X = "Age.difference", Y = "Condom.frequency", K = 10,dof = 1, seed = 1)
 
-save(mycv, file = "/Users/emanuel/Dropbox/SHIMS Baseline data/cv_condomuse.Rdata")
+save(mycv, file = "/Users/emanuel/Google Drive/SHIMS/SHIMS Baseline data/cv_condomuse.Rdata")
 
 plot(mycv, type = "l")
 end_time <- Sys.time()
@@ -691,7 +691,7 @@ cv.clmm <- function(Data, X, Y, K = 10, seed = 1234, dof){
 # debug(cv.clmm)
 mycv.sex <- cv.clmm(Data = DT.sexdata.men, X = "Age.difference", Y = "Sex.frequency", K = 10,dof = degreesoffreedom, seed = 1)
 
-save(mycv.sex, file = "/Users/emanuel/Dropbox/SHIMS Baseline data/cv_sexfreq.Rdata")
+save(mycv.sex, file = "/Users/emanuel/Google Drive/SHIMS/SHIMS Baseline data/cv_sexfreq.Rdata")
 plot(mycv.sex, type = "l")
 
 # Based on the cross validation output we set degrees of freedom = 6 in sex.M2
@@ -711,7 +711,7 @@ DT.partnerdata.men <- DT.Agemix.men %>%
             Age.difference,
             Partner.type = ordered(Partner.type, levels = partlevels),
             Money.gifts = ordered(Money.gifts, levels = freqlevels)) %>% 
-  drop_na(Age.difference,Partner.type)
+  drop_na(Age.difference,Partner.type,No.partners)
 
 summary(DT.partnerdata.men)
 
@@ -943,7 +943,7 @@ cv.clmm <- function(Data, X, Y, K = 10, seed = 1234, dof){
 # debug(cv.clmm)
 mycv.partner <- cv.clmm(Data = DT.partnerdata.men, X = "Age.difference", Y = "Partner.type", K = 10,dof = degreesoffreedom, seed = 1)
 
-save(mycv.partner, file = "/Users/emanuel/Dropbox/SHIMS Baseline data/cv_partner.Rdata")
+save(mycv.partner, file = "/Users/emanuel/Google Drive/SHIMS/SHIMS Baseline data/cv_partner.Rdata")
 plot(mycv.partner, type = "l")
 
 # Based on the cross validation output we set degrees of freedom = 3 in partner.M2
@@ -973,8 +973,8 @@ end_time <- Sys.time()
 end_time - start_time
 
 gam.Condom
-save(gam.Condom, file ="/Users/emanuel/Dropbox/SHIMS Baseline data/gam.Condom.Rdata")
-# load("/Users/emanuel/Dropbox/SHIMS Baseline data/gam.Condom.Rdata")
+save(gam.Condom, file ="/Users/emanuel/Google Drive/SHIMS/SHIMS Baseline data/gam.Condom.Rdata")
+# load("/Users/emanuel/Google Drive/SHIMS/SHIMS Baseline data/gam.Condom.Rdata")
 summary(gam.Condom)
 coef(gam.Condom) ## estimated coefficients, edf=5
 
@@ -985,9 +985,9 @@ plot(gam.Condom, residuals = T)
 
 predict.gam(gam.Condom, type = "response")
 
-# adjusting for number of partners
+# adjusting for age and number of partners
 start_time <- Sys.time()
-gam.Condom.adj <- bam(Condom.frequency ~ s(Age.difference, bs="cr", k = 10) + s(No.partners, bs="cr", k = 10) + s(Uid, bs="re"), # penalized cubic regression splines
+gam.Condom.adj <- bam(Condom.frequency ~ s(Age.difference, bs="cr", k = 10) + s(Participant.age, bs="cr", k = 10)+ s(No.partners, bs="cr", k = 10) + s(Uid, bs="re"), # penalized cubic regression splines
                        data = DT.reldata.men.gamm,
                        family = ocat(R = 3),
                        method = "fREML", #fREML is much faster and yields similar results like RELM
@@ -997,8 +997,8 @@ gam.Condom.adj <- bam(Condom.frequency ~ s(Age.difference, bs="cr", k = 10) + s(
 end_time <- Sys.time()
 end_time - start_time
 gam.Condom.adj
-save(gam.Condom.adj, file ="/Users/emanuel/Dropbox/SHIMS Baseline data/gam.Condom.adj.Rdata")
-# load("/Users/emanuel/Dropbox/SHIMS Baseline data/gam.Condom.adj.Rdata")
+save(gam.Condom.adj, file ="/Users/emanuel/Google Drive/SHIMS/SHIMS Baseline data/gam.Condom.adj.Rdata")
+# load("/Users/emanuel/Google Drive/SHIMS/SHIMS Baseline data/gam.Condom.adj.Rdata")
 
 # Implementing GAMMs for comparision: Sex frequency model -----------------------------------
 
@@ -1023,13 +1023,12 @@ end_time <- Sys.time()
 end_time - start_time
 
 gam.Sex
-save(gam.Sex, file ="/Users/emanuel/Dropbox/SHIMS Baseline data/gam.Sex.Rdata")
-# load("/Users/emanuel/Dropbox/SHIMS Baseline data/gam.Sex.Rdata")
+save(gam.Sex, file ="/Users/emanuel/Google Drive/SHIMS/SHIMS Baseline data/gam.Sex.Rdata")
+# load("/Users/emanuel/Google Drive/SHIMS/SHIMS Baseline data/gam.Sex.Rdata")
 
 # adjusting for number of partners
 start_time <- Sys.time()
-gam.Sex.adj <- bam(Sex.frequency ~ s(Age.difference, bs="cr", k = 10) + s(No.partners, bs="cr", k = 10) + 
-                     s(No.partners, bs="cr", k = 10) + s(Uid, bs="re"), # penalized cubic regression splines
+gam.Sex.adj <- bam(Sex.frequency ~ s(Age.difference, bs="cr", k = 10) + s(Participant.age, bs="cr", k = 10) + s(No.partners, bs="cr", k = 10) + s(Uid, bs="re"), # penalized cubic regression splines
                        data = DT.sexdata.men.gamm,
                        family = ocat(R = 4),
                        method = "fREML", #fREML is much faster and yields similar results like RELM
@@ -1039,8 +1038,8 @@ gam.Sex.adj <- bam(Sex.frequency ~ s(Age.difference, bs="cr", k = 10) + s(No.par
 end_time <- Sys.time()
 end_time - start_time
 gam.Sex.adj
-save(gam.Sex.adj, file ="/Users/emanuel/Dropbox/SHIMS Baseline data/gam.Sex.adj.Rdata")
-# load("/Users/emanuel/Dropbox/SHIMS Baseline data/gam.Sex.adj.Rdata")
+save(gam.Sex.adj, file ="/Users/emanuel/Google Drive/SHIMS/SHIMS Baseline data/gam.Sex.adj.Rdata")
+# load("/Users/emanuel/Google Drive/SHIMS/SHIMS Baseline data/gam.Sex.adj.Rdata")
 
 # Implementing GAMMs for comparision: partner type model -----------------------------------
 # Generalized additive mixed models
@@ -1066,12 +1065,12 @@ end_time <- Sys.time()
 end_time - start_time
 
 gam.Partner
-save(gam.Partner, file ="/Users/emanuel/Dropbox/SHIMS Baseline data/gam.Partner.Rdata")
-# load("/Users/emanuel/Dropbox/SHIMS Baseline data/gam.Partner.Rdata")
+save(gam.Partner, file ="/Users/emanuel/Google Drive/SHIMS/SHIMS Baseline data/gam.Partner.Rdata")
+# load("/Users/emanuel/Google Drive/SHIMS/SHIMS Baseline data/gam.Partner.Rdata")
 
 # adjusting for number of partners
 start_time <- Sys.time()
-gam.Partner.adj <- bam(Partner.type ~ s(Age.difference, bs="cr", k = 10) + s(No.partners, bs="cr", k = 10) + s(Uid, bs="re"), # penalized cubic regression splines
+gam.Partner.adj <- bam(Partner.type ~ s(Age.difference, bs="cr", k = 10) + s(Participant.age, bs="cr", k = 10) + s(No.partners, bs="cr", k = 10) + s(Uid, bs="re"), # penalized cubic regression splines
                        data = DT.partnerdata.men.gamm,
                        family = ocat(R = 3),
                        method = "fREML", #fREML is much faster and yields similar results like RELM
@@ -1081,5 +1080,5 @@ gam.Partner.adj <- bam(Partner.type ~ s(Age.difference, bs="cr", k = 10) + s(No.
 end_time <- Sys.time()
 end_time - start_time
 gam.Partner.adj
-save(gam.Partner.adj, file ="/Users/emanuel/Dropbox/SHIMS Baseline data/gam.Partner.adj.Rdata")
-# load("/Users/emanuel/Dropbox/SHIMS Baseline data/gam.Partner.adj.Rdata")
+save(gam.Partner.adj, file ="/Users/emanuel/Google Drive/SHIMS/SHIMS Baseline data/gam.Partner.adj.Rdata")
+# load("/Users/emanuel/Google Drive/SHIMS/SHIMS Baseline data/gam.Partner.adj.Rdata")
