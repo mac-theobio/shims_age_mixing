@@ -224,7 +224,7 @@ ggsave("Condompred.png", width = 6.25, height = 5.25,dpi = 600)
 # cumulative logit random intercept model
 
 # degree of freedom = 5 from estimated EDF in GAM model
-condom.M2 <- clmm(Condom.frequency ~ ns(Age.difference,df = 2) + (1|Uid),
+condom.M2 <- clmm(Condom.frequency ~ ns(Age.difference,df = 5) + (1|Uid),
                    #random =  Uid,
                    data = DT.reldata.men,
                    #link = "logit", dont specify because effects dont work when specify
