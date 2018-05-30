@@ -13,7 +13,7 @@ library(nlme) # fitting lmm
 # ==============
 #load("~/Documents/shims_age_mixing/DT.Agemix.men.5.Rdata")
 
-load("/Users/emanuel/Dropbox/SHIMS Baseline data/DT.Agemix.men.Rdata")
+load("/Users/emanuel/Google Drive/SHIMS/SHIMS Baseline data/DT.Agemix.men.Rdata")
 theme_set(theme_bw()) # set global plot theme
 
 # =========================
@@ -46,8 +46,8 @@ DT.Agemix.men <- filter(DT.Agemix.men, Partner.age >= L & Partner.age <= U)
 ggplot(DT.Agemix.men,aes(Participant.age,Partner.age)) +
   geom_jitter(size=3,color="black", width = 0.25, height = 0.25, alpha = 0.5) +
   xlab("Age") +
-  ylab("Partner age")
-
+  ylab("Partner age") +
+  scale_x_continuous(labels = function(x)x+15, breaks = scales::pretty_breaks(n = 10)) 
 
 # =======================
 # Random intercept model
