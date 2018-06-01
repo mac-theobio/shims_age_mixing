@@ -159,9 +159,9 @@ ggplot(heteroscedastic, aes(fitted.M2, residuals.M2)) +
   geom_hline(yintercept = 0) +
   xlab("Fitted Values") +
   ylab("Residuals") +
-  theme(axis.text.x = element_text(size=11),
-        axis.text.y = element_text(size=11)) +
-  theme(text=element_text( size=11)) + 
+  theme(axis.text.x = element_text(size=12),
+        axis.text.y = element_text(size=12)) +
+  theme(text=element_text( size=12)) + 
   
 ggsave("detecthetero.png", width = 6.25, height = 5.25,dpi = 600)
 
@@ -175,9 +175,9 @@ ggplot(heteroscedastic, aes(Participant.age, residuals.M2)) +
   scale_x_continuous(labels = function(x)x+15, breaks = scales::pretty_breaks(n = 10)) +
   scale_y_continuous(breaks = scales::pretty_breaks(n = 5)) +
   coord_fixed()+
-  theme(axis.text.x = element_text(size=11),
-        axis.text.y = element_text(size=11)) +
-  theme(text=element_text( size=11)) + 
+  theme(axis.text.x = element_text(size=12),
+        axis.text.y = element_text(size=12)) +
+  theme(text=element_text( size=12)) + 
 
 ggsave("detecthetero1.png", width = 6.25, height = 5.25,dpi = 600)
 
@@ -249,9 +249,9 @@ ggplot(DT.Agemix.men,aes(Participant.age,Partner.age)) +
   scale_x_continuous(labels = function(x)x+15, breaks = scales::pretty_breaks(n = 10)) +
   scale_y_continuous(breaks = scales::pretty_breaks(n = 10)) +
   coord_fixed()+
-  theme(axis.text.x = element_text(size=11),
-        axis.text.y = element_text(size=11)) +
-  theme(text=element_text( size=11)) + 
+  theme(axis.text.x = element_text(size=12),
+        axis.text.y = element_text(size=12)) +
+  theme(text=element_text( size=12)) + 
   geom_abline(aes(intercept = fixef(agemix.M5)[["(Intercept)"]],slope = fixef(agemix.M5)[["Participant.age"]], color = "Population average"),
               size = 1.25) +
   geom_abline(aes(intercept = 15,slope =1,color = "Same age (x = y)"), size = 1.25) +
@@ -291,9 +291,9 @@ ggplot(DT.Agemix.men,aes(Participant.age,Partner.age)) +
   scale_x_continuous(labels = function(x)x+15, breaks = scales::pretty_breaks(n = 10)) +
   scale_y_continuous(breaks = scales::pretty_breaks(n = 10)) +
   coord_fixed()+
-  theme(axis.text.x = element_text(size=11),
-        axis.text.y = element_text(size=11)) +
-  theme(text=element_text( size=11)) + 
+  theme(axis.text.x = element_text(size=12),
+        axis.text.y = element_text(size=12)) +
+  theme(text=element_text( size=12)) + 
   geom_abline(aes(intercept = fixef(agemix.M5)[["(Intercept)"]],slope = fixef(agemix.M5)[["Participant.age"]], color = "Population average"),
               size = 1.25) +
   #geom_abline(aes(intercept = 15,slope =1,color = "Same age (x = y)"), size = 1.25) +
