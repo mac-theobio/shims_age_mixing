@@ -228,7 +228,6 @@ ggsave("Condompred.png", width = 5.25, height = 4.25,dpi = 600)
 
 # degree of freedom = 5 from estimated EDF in GAM model
 condom.M2 <- clmm(Condom.frequency ~ ns(Age.difference,df = 5) + (1|Uid),
-                   #random =  Uid,
                    data = DT.reldata.men,
                    #link = "logit", dont specify because effects dont work when specify
                    nAGQ = 7,
@@ -262,7 +261,7 @@ Effects.condom.M2.plot <- Effects.condom.M2 %>%
         axis.text.y = element_text(size=15)) +
   theme(text=element_text( size=15)) 
 
-Effects.condom.M2.plot 
+Effects.condom.M2.plot + theme(legend.position = "none")
 ggsave("Condomuse2.png", width = 5.25, height = 5.25,dpi = 600)
 
 # Predicted effects on condom frequency
@@ -365,8 +364,8 @@ Effects.condom.M3b.plot <- Effects.condom.M3b %>%
                     palette = "Dark2")+
   theme(axis.text.x = element_text(size=15),
         axis.text.y = element_text(size=15)) +
-  theme(text=element_text( size=15))
-  #scale_x_continuous(labels = function(x)x+15, breaks = scales::pretty_breaks(n = 10)) 
+  theme(text=element_text( size=15)) +
+  scale_x_continuous( breaks = scales::pretty_breaks(n = 10)) 
 
 Effects.condom.M3b.plot + theme(legend.position = "none")
 ggsave("Condomuse3b.png", width = 5.25, height = 4.25,dpi = 600)
@@ -384,8 +383,8 @@ Predictions.condom.M3b.plot <- Predictions.condom.M3b %>%
   ylab("Condom use score") +
   theme(axis.text.x = element_text(size=15),
         axis.text.y = element_text(size=15)) +
-  theme(text=element_text( size=15)) 
-  #scale_x_continuous(labels = function(x)x+15, breaks = scales::pretty_breaks(n = 10)) 
+  theme(text=element_text( size=15)) +
+  scale_x_continuous(breaks = scales::pretty_breaks(n = 10)) 
 
 Predictions.condom.M3b.plot
 ggsave("Condompred3b.png", width = 5.25, height = 4.25,dpi = 600)
@@ -457,7 +456,7 @@ sexlevels = c("1","between 2-5","between 6-10","more than 10")
 DT.sexdata.men <- DT.Agemix.men %>% 
   transmute(Uid = as.factor(Uid),
             No.partners,
-            Participant.age,
+            Participant.age = Participant.age + 15,
             Age.difference,
             Sex.frequency = ordered(Sex.frequency, levels = sexlevels),
             Money.gifts = ordered(Money.gifts, levels = freqlevels)) %>% 
@@ -622,7 +621,7 @@ Effects.sex.M2.plot <- Effects.sex.M2 %>%
         axis.text.y = element_text(size=15)) +
   theme(text=element_text( size=15)) 
 
-Effects.sex.M2.plot
+Effects.sex.M2.plot + theme(legend.position = "none")
 ggsave("Sexfrequency2.png", width = 5.25, height = 4.35,dpi = 600)
 
 # Predicted effects on sex frequency
@@ -683,7 +682,11 @@ Effects.sex.M3a.plot <- Effects.sex.M3a %>%
         axis.text.y = element_text(size=15)) +
   theme(text=element_text( size=15)) 
 
-Effects.sex.M3a.plot
+legsex <- get_legend(Effects.sex.M3a.plot)
+ggplotify::as.ggplot(legsex)
+ggsave("Sexfreq3leg.png", width = 1.35, height = 1.25,dpi = 600)
+
+Effects.sex.M3a.plot + theme(legend.position = "none")
 ggsave("Sexfrequency3a.png", width = 5.25, height = 4.35,dpi = 600)
 
 # Predicted effects on sex frequency
@@ -729,10 +732,10 @@ Effects.sex.M3b.plot <- Effects.sex.M3b %>%
   theme(axis.text.x = element_text(size=15),
         axis.text.y = element_text(size=15)) +
   theme(text=element_text( size=15)) +
-  scale_x_continuous(labels = function(x)x+15, breaks = scales::pretty_breaks(n = 10)) 
+  scale_x_continuous(breaks = scales::pretty_breaks(n = 10)) 
 
 
-Effects.sex.M3b.plot
+Effects.sex.M3b.plot + theme(legend.position = "none")
 ggsave("Sexfrequency3b.png", width = 5.25, height = 4.35,dpi = 600)
 
 # Predicted effects on sex frequency
@@ -749,7 +752,7 @@ Predictions.sex.M3b.plot <- Predictions.sex.M3b %>%
   theme(axis.text.x = element_text(size=15),
         axis.text.y = element_text(size=15)) +
   theme(text=element_text( size=15)) +
-  scale_x_continuous(labels = function(x)x+15, breaks = scales::pretty_breaks(n = 10)) 
+  scale_x_continuous(breaks = scales::pretty_breaks(n = 10)) 
 
 Predictions.sex.M3b.plot
 ggsave("Sexpred3b.png", width = 5.25, height = 4.35,dpi = 600)
@@ -813,7 +816,7 @@ partlevels = c("casual partner","regular partner","husband/wife")
 DT.partnerdata.men <- DT.Agemix.men %>% 
   transmute(Uid = as.factor(Uid),
             No.partners,
-            Participant.age,
+            Participant.age = Participant.age + 15,
             Age.difference,
             Partner.type = ordered(Partner.type, levels = partlevels),
             Money.gifts = ordered(Money.gifts, levels = freqlevels)) %>% 
@@ -941,7 +944,7 @@ ggsave("Partnerpred.png", width = 5.25, height = 4.35,dpi = 600)
 
 start_time <- Sys.time()
 
-partner.M2 <- clmm(Partner.type ~ ns(Age.difference,df = 3) + (1|Uid),
+partner.M2 <- clmm(Partner.type ~ ns(Age.difference,df = 5) + (1|Uid),
                #random =  Uid,
                data = DT.partnerdata.men,
                #link = "logit", dont specify because effects dont work when specify
@@ -963,14 +966,14 @@ tidypart.2 <- Effect("Age.difference", partner.M2,
   gather(var, value, - Age.difference) %>%
   separate(var, c("fit", "cond"), extra = "merge") %>%
   mutate(cond = gsub("prob.", "", cond) %>%
-           ordered(levels = c("husband.wife","regular.partner","casual.partner"))%>%
-           plyr::mapvalues(from = c("husband.wife","regular.partner","casual.partner"),
+           ordered(levels = c("casual.partner","regular.partner","husband.wife"))%>%
+           plyr::mapvalues(from = c("casual.partner","regular.partner","husband.wife"),
                            to = partlevels)) %>% 
   spread(fit, value) 
 
 part.2a <- tidypart.2 %>%
   ggplot(aes(x = Age.difference, y = prob, fill = cond)) +
-  geom_area(position = position_stack(reverse = F)) +
+  geom_area(position = position_stack(reverse = T)) +
   xlab("Age difference") +
   ylab("Probability") +
   scale_fill_brewer(name = "Partner type", 
@@ -979,7 +982,7 @@ part.2a <- tidypart.2 %>%
         axis.text.y = element_text(size=15)) +
   theme(text=element_text( size=15)) 
 
-part.2a
+part.2a + theme(legend.position = "none")
 ggsave("Partnertype2.png", width = 5.25, height = 4.35,dpi = 600)
 
 # Predicted effects on sex frequency
@@ -1005,6 +1008,115 @@ ggsave("Partnerpred2.png", width = 5.25, height = 4.35,dpi = 600)
 predictions <- predict.clmm(partner.M2,newdata = DT.partnerdata.men,dof = 4)
 
 table(predictions$pred.cat)
+
+# ** Step 4, adjusted regression spline model--------------------------------------
+
+partner.M3 <- clmm(Partner.type ~ ns(Age.difference,df = 3) + ns(Participant.age, df = 4) + ns(No.partners, df=1) + (1|Uid),
+                  #random =  Uid,
+                  data = DT.partnerdata.men,
+                  #link = "logit", dont specify because effects dont work when specify
+                  nAGQ = 7,
+                  Hess = T) #if you need to call summary
+
+summary(partner.M3)
+
+# (i) Age difference effect
+Effects.partner.M3a <- Effect("Age.difference", partner.M3, 
+                              xlevels = list(Age.difference = 50)) %>%
+  data.frame() %>%
+  select(-matches("logit.")) %>%
+  gather(var, value, - Age.difference) %>%
+  separate(var, c("fit", "cond"), extra = "merge") %>%
+  mutate(cond = gsub("prob.", "", cond) %>%
+           ordered(levels = c("casual.partner","regular.partner","husband.wife"))%>%
+           plyr::mapvalues(from = c("casual.partner","regular.partner","husband.wife"),
+                           to = partlevels)) %>% 
+  spread(fit, value) 
+
+Effects.partner.M3a.plot <- Effects.partner.M3a %>%
+  ggplot(aes(x = Age.difference, y = prob, fill = cond)) +
+  geom_area(position = position_stack(reverse = T)) +
+  xlab("Age difference") +
+  ylab("Probability") +
+  scale_fill_brewer(name = "Partner type", 
+                    palette = "Dark2")+
+  theme(axis.text.x = element_text(size=15),
+        axis.text.y = element_text(size=15)) +
+  theme(text=element_text( size=15)) 
+
+legpart <- get_legend(Effects.partner.M3a.plot)
+ggplotify::as.ggplot(legpart)
+ggsave("Partnertype3leg.png", width = 1.39, height = 1.25,dpi = 600)
+
+Effects.partner.M3a.plot + theme(legend.position = "none")
+ggsave("Partnertype3a.png", width = 5.25, height = 4.25,dpi = 600)
+
+
+# Predicted effects and plot
+Predictions.partner.M3a <- OrdPred(partner.M3,"Age.difference",DT.partnerdata.men)
+
+Predictions.partner.M3a.plot <- Predictions.partner.M3a %>%
+  ggplot(aes(x = Age.difference, y = fit)) +
+  geom_line(size = 1, color = "#009E73") +
+  geom_ribbon(aes(ymin = lwr, ymax = upr),
+              alpha = 0.25,
+              fill = "#009E73") +
+  xlab("Age difference") +
+  ylab("Partner type score") +
+  theme(axis.text.x = element_text(size=15),
+        axis.text.y = element_text(size=15)) +
+  theme(text=element_text( size=15)) 
+
+
+Predictions.partner.M3a.plot 
+ggsave("Partnerpred3a.png", width = 5.25, height = 4.25,dpi = 600)
+
+# (ii) Age of participant effect
+Effects.partner.M3b <- Effect("Participant.age", partner.M3, 
+                             xlevels = list(Participant.age = 50)) %>%
+  data.frame() %>%
+  select(-matches("logit.")) %>%
+  gather(var, value, - Participant.age) %>%
+  separate(var, c("fit", "cond"), extra = "merge") %>%
+  mutate(cond = gsub("prob.", "", cond) %>%
+           ordered(levels = c("casual.partner","regular.partner","husband.wife"))%>%
+           plyr::mapvalues(from = c("casual.partner","regular.partner","husband.wife"),
+                           to = partlevels)) %>% 
+  spread(fit, value) 
+
+Effects.partner.M3b.plot <- Effects.partner.M3b %>%
+  ggplot(aes(x = Participant.age, y = prob, fill = cond)) +
+  geom_area(position = position_stack(reverse = T)) +
+  xlab("Participant Age") +
+  ylab("Probability") +
+  scale_fill_brewer(name = "Partner type", 
+                    palette = "Dark2")+
+  theme(axis.text.x = element_text(size=15),
+        axis.text.y = element_text(size=15)) +
+  theme(text=element_text( size=15)) +
+  scale_x_continuous( breaks = scales::pretty_breaks(n = 10)) 
+
+Effects.partner.M3b.plot + theme(legend.position = "none")
+ggsave("Partnertype3b.png", width = 5.25, height = 4.25,dpi = 600)
+
+# Predicted effects and plot
+Predictions.partner.M3b <- OrdPred(partner.M3,"Participant.age",DT.partnerdata.men)
+
+Predictions.partner.M3b.plot <- Predictions.partner.M3b %>%
+  ggplot(aes(x = Participant.age, y = fit)) +
+  geom_line(size = 1, color = "#009E73") +
+  geom_ribbon(aes(ymin = lwr, ymax = upr),
+              alpha = 0.25,
+              fill = "#009E73") +
+  xlab("Participant age") +
+  ylab("Partner type score") +
+  theme(axis.text.x = element_text(size=15),
+        axis.text.y = element_text(size=15)) +
+  theme(text=element_text( size=15)) +
+  scale_x_continuous(breaks = scales::pretty_breaks(n = 10)) 
+
+Predictions.partner.M3b.plot
+ggsave("Partnerpred3b.png", width = 5.25, height = 4.25,dpi = 600)
 
 cv.clmm <- function(Data, X, Y, K = 10, seed = 1234, dof){
   # A function that computes cross validation error for a clmm2 model with 4 df in the spline term
