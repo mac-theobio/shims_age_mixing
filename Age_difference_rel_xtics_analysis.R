@@ -488,7 +488,8 @@ ggplot(data = DT.sexdata.men) +
 
 ggsave("sexfreqdist.png", width = 5.25, height = 5.25,dpi = 600)
 
-
+# mean of age differences in the 3 categories
+tapply(DT.sexdata.men$Age.difference, DT.sexdata.men$Sex.frequency, mean)
 
 # ** Step 1, ordinary partner level model ----------------------------------------
 # A cumulative logit model that includes the effect of age difference on condom use
@@ -899,9 +900,9 @@ tidypart.1 <- Effect("Age.difference", partner.M1,
   gather(var, value, - Age.difference) %>%
   separate(var, c("fit", "cond"), extra = "merge") %>%
   mutate(cond = gsub("prob.", "", cond) %>%
-           ordered(levels = c("husband.wife","regular.partner","casual.partner"))%>%
-           plyr::mapvalues(from = c("husband.wife","regular.partner","casual.partner"),
-                           to = partlevels)) %>% 
+           ordered(levels = c("casual.partner","regular.partner","husband.wife"))%>%
+           plyr::mapvalues(from = c("casual.partner","regular.partner","husband.wife"),
+                           to = c("casual","regular","wife"))) %>% 
   spread(fit, value) 
 
 partner.1a <- tidypart.1 %>%
@@ -968,7 +969,7 @@ tidypart.2 <- Effect("Age.difference", partner.M2,
   mutate(cond = gsub("prob.", "", cond) %>%
            ordered(levels = c("casual.partner","regular.partner","husband.wife"))%>%
            plyr::mapvalues(from = c("casual.partner","regular.partner","husband.wife"),
-                           to = partlevels)) %>% 
+                           to = c("casual","regular","wife"))) %>% 
   spread(fit, value) 
 
 part.2a <- tidypart.2 %>%
@@ -981,6 +982,10 @@ part.2a <- tidypart.2 %>%
   theme(axis.text.x = element_text(size=15),
         axis.text.y = element_text(size=15)) +
   theme(text=element_text( size=15)) 
+
+legpart <- get_legend(part.2a)
+ggplotify::as.ggplot(legpart)
+ggsave("Partnertype3leg.png", width = 1.39, height = 1.25,dpi = 600)
 
 part.2a + theme(legend.position = "none")
 ggsave("Partnertype2.png", width = 5.25, height = 4.35,dpi = 600)
@@ -1030,7 +1035,7 @@ Effects.partner.M3a <- Effect("Age.difference", partner.M3,
   mutate(cond = gsub("prob.", "", cond) %>%
            ordered(levels = c("casual.partner","regular.partner","husband.wife"))%>%
            plyr::mapvalues(from = c("casual.partner","regular.partner","husband.wife"),
-                           to = partlevels)) %>% 
+                           to = c("casual","regular","wife"))) %>% 
   spread(fit, value) 
 
 Effects.partner.M3a.plot <- Effects.partner.M3a %>%
@@ -1043,10 +1048,6 @@ Effects.partner.M3a.plot <- Effects.partner.M3a %>%
   theme(axis.text.x = element_text(size=15),
         axis.text.y = element_text(size=15)) +
   theme(text=element_text( size=15)) 
-
-legpart <- get_legend(Effects.partner.M3a.plot)
-ggplotify::as.ggplot(legpart)
-ggsave("Partnertype3leg.png", width = 1.39, height = 1.25,dpi = 600)
 
 Effects.partner.M3a.plot + theme(legend.position = "none")
 ggsave("Partnertype3a.png", width = 5.25, height = 4.25,dpi = 600)
@@ -1081,7 +1082,7 @@ Effects.partner.M3b <- Effect("Participant.age", partner.M3,
   mutate(cond = gsub("prob.", "", cond) %>%
            ordered(levels = c("casual.partner","regular.partner","husband.wife"))%>%
            plyr::mapvalues(from = c("casual.partner","regular.partner","husband.wife"),
-                           to = partlevels)) %>% 
+                           to = c("casual","regular","wife"))) %>% 
   spread(fit, value) 
 
 Effects.partner.M3b.plot <- Effects.partner.M3b %>%
