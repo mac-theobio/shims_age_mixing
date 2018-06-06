@@ -4,15 +4,16 @@
 
 #library(data.table)
 library(tidyverse)
-library(ordinal)    #for cumulative link mixed models
-library(splines)    #or splines in models
-library(survival)   #for cox ph model
-library(effects)    #to do effects plots
-library(cowplot)    #plot_grid
-library(dotwhisker) #make dot whisker plots
-library(broom)      #convert objects into tidy data frame: tidy()
-library(visreg)     #getting "contrast" hazard ratios
-library(mgcv)       #for fitting GAMs
+library(ordinal)      #for cumulative link mixed models
+library(splines)      #or splines in models
+library(survival)     #for cox ph model
+library(effects)      #to do effects plots
+library(cowplot)      #plot_grid
+library(dotwhisker)   #make dot whisker plots
+library(broom)        #convert objects into tidy data frame: tidy()
+library(visreg)       #getting "contrast" hazard ratios
+library(mgcv)         #for fitting GAMs
+# library(RColorBrewer) #creating color palletes
 # library(egg)      #devtools::install_github("baptiste/egg") #for plot management
 # library(strcode)  #devtools::install_github("lorenzwalthert/strcode") #for code structuring with sub/headings
 
@@ -21,6 +22,8 @@ library(mgcv)       #for fitting GAMs
 #load("~/Documents/shims_age_mixing/DT.Agemix.men.5.Rdata") # 5% random sample
 load("/Users/emanuel/Google Drive/SHIMS/SHIMS Baseline data/DT.Agemix.men.Rdata") # full dataset
 theme_set(theme_bw()) # set global plot theme 
+mycols <- c("#5C75F4", "#D95F02", "#1B9E77", "#D80491")
+mycols1 <- c("#D80491", "#1B9E77","#D95F02", "#5C75F4")
 source("Functions_for_SHIMS_study.R")
 
 
@@ -139,8 +142,8 @@ plot(Effect("Age.difference", condom.M1))
 #   data.frame()
 # 
 # ggplot(tidycond, aes(Age.difference, prob.never)) +
-#   geom_line(color = "#009E73", size = 1.2) +
-#   geom_ribbon(aes(ymin = L.prob.never, ymax = U.prob.never), fill = "#009E73", alpha = 0.25)
+#   geom_line(color = "dodgerblue", size = 1.2) +
+#   geom_ribbon(aes(ymin = L.prob.never, ymax = U.prob.never), fill = "dodgerblue", alpha = 0.25)
 # # same can be done for sometimes and always
 
 # we can plot the fitted value on the scale of the latent continous condom use score. We have one line
@@ -152,8 +155,8 @@ tidycond.0 <- data.frame(Effect("Age.difference", condom.M1,
                                 latent = T))  
 
 ggplot(tidycond.0, aes(Age.difference, fit)) +
-  geom_line(color = "#009E73", size = 1.2) +
-  geom_ribbon(aes(ymin = lower, ymax = upper), fill = "#009E73", alpha = 0.25)
+  geom_line(color = "dodgerblue", size = 1.2) +
+  geom_ribbon(aes(ymin = lower, ymax = upper), fill = "dodgerblue", alpha = 0.25)
 
 # plot(Effect("Age.difference", condom.M1,
 #             xlevels = list(Age.difference = 50),
@@ -186,8 +189,8 @@ cond.1a <- tidycond.1 %>%
   #geom_area()+
   xlab("Age difference") +
   ylab("Probability") +
-  scale_fill_brewer(name = "Condom use", 
-                    palette = "Dark2")+
+  scale_fill_manual(name = "Condom use", 
+                    values = c(mycols))+
   theme(axis.text.x = element_text(size=15),
         axis.text.y = element_text(size=15)) +
   theme(text=element_text( size=15)) 
@@ -209,10 +212,10 @@ tidycond.1b <- OrdPred(condom.M1,"Age.difference",DT.reldata.men)
 
 cond.pred <- tidycond.1b %>%
   ggplot(aes(x = Age.difference, y = fit)) +
-  geom_line(size = 1, color = "#009E73") +
+  geom_line(size = 1, color = "dodgerblue") +
   geom_ribbon(aes(ymin = lwr, ymax = upr),
               alpha = 0.25,
-              fill = "#009E73") +
+              fill = "dodgerblue") +
   xlab("Age difference") +
   ylab("Condom use score") +
   theme(axis.text.x = element_text(size=15),
@@ -248,15 +251,14 @@ Effects.condom.M2 <- Effect("Age.difference", condom.M2,
            ordered(levels = freqlevels))%>%
   spread(fit, value) 
 
-
 Effects.condom.M2.plot <- Effects.condom.M2 %>%
   ggplot(aes(x = Age.difference, y = prob, fill = cond)) +
   geom_area(position = position_stack(reverse = T)) +
   #geom_area()+
   xlab("Age difference") +
   ylab("Probability") +
-  scale_fill_brewer(name = "Condom use", 
-                    palette = "Dark2")+
+  scale_fill_manual(name = "Condom use", 
+                    values = c(mycols))+
   theme(axis.text.x = element_text(size=15),
         axis.text.y = element_text(size=15)) +
   theme(text=element_text( size=15)) 
@@ -271,10 +273,10 @@ Predictions.condom.M2 <- OrdPred(condom.M2,"Age.difference",DT.reldata.men)
 
 Predictions.condom.M2.plot <- Predictions.condom.M2 %>%
   ggplot(aes(x = Age.difference, y = fit)) +
-  geom_line(size = 1, color = "#009E73") +
+  geom_line(size = 1, color = "dodgerblue") +
   geom_ribbon(aes(ymin = lwr, ymax = upr),
               alpha = 0.25,
-              fill = "#009E73") +
+              fill = "dodgerblue") +
   xlab("Age difference") +
   ylab("Condom use score") +
   theme(axis.text.x = element_text(size=15),
@@ -309,11 +311,10 @@ Effects.condom.M3a <- Effect("Age.difference", condom.M3,
 Effects.condom.M3a.plot <- Effects.condom.M3a %>%
   ggplot(aes(x = Age.difference, y = prob, fill = cond)) +
   geom_area(position = position_stack(reverse = T)) +
-  #geom_area()+
   xlab("Age difference") +
   ylab("Probability") +
-  scale_fill_brewer(name = "Condom use", 
-                    palette = "Dark2")+
+  scale_fill_manual(name = "Condom use", 
+                    values = c(mycols), guide = guide_legend(reverse = T))+
   theme(axis.text.x = element_text(size=15),
         axis.text.y = element_text(size=15)) +
   theme(text=element_text( size=15)) 
@@ -331,10 +332,10 @@ Predictions.condom.M3a <- OrdPred(condom.M3,"Age.difference",DT.reldata.men)
 
 Predictions.condom.M3a.plot <- Predictions.condom.M3a %>%
   ggplot(aes(x = Age.difference, y = fit)) +
-  geom_line(size = 1, color = "#009E73") +
+  geom_line(size = 1, color = "dodgerblue") +
   geom_ribbon(aes(ymin = lwr, ymax = upr),
               alpha = 0.25,
-              fill = "#009E73") +
+              fill = "dodgerblue") +
   xlab("Age difference") +
   ylab("Condom use score") +
   theme(axis.text.x = element_text(size=15),
@@ -360,8 +361,8 @@ Effects.condom.M3b.plot <- Effects.condom.M3b %>%
   geom_area(position = position_stack(reverse = T)) +
   xlab("Participant Age") +
   ylab("Probability") +
-  scale_fill_brewer(name = "Condom use", 
-                    palette = "Dark2")+
+  scale_fill_manual(name = "Condom use", 
+                    values = c(mycols))+
   theme(axis.text.x = element_text(size=15),
         axis.text.y = element_text(size=15)) +
   theme(text=element_text( size=15)) +
@@ -375,10 +376,10 @@ Predictions.condom.M3b <- OrdPred(condom.M3,"Participant.age",DT.reldata.men)
 
 Predictions.condom.M3b.plot <- Predictions.condom.M3b %>%
   ggplot(aes(x = Participant.age, y = fit)) +
-  geom_line(size = 1, color = "#009E73") +
+  geom_line(size = 1, color = "dodgerblue") +
   geom_ribbon(aes(ymin = lwr, ymax = upr),
               alpha = 0.25,
-              fill = "#009E73") +
+              fill = "dodgerblue") +
   xlab("Participant age") +
   ylab("Condom use score") +
   theme(axis.text.x = element_text(size=15),
@@ -447,7 +448,6 @@ end_time - start_time
 
 # Sex Frequency Analysis -----------------------------------------------------
 # ** Subset and Exploratory data analysis -----------------------------------
-
 # ordering levels
 freqlevels = c("never","sometimes","always")
 sexlevels = c("1","between 2-5","between 6-10","more than 10")
@@ -532,8 +532,8 @@ tidysex.0 <- data.frame(Effect("Age.difference", sex.M1,
                                 latent = T))  
 
 ggplot(tidysex.0, aes(Age.difference, fit)) +
-  geom_line(color = "#009E73", size = 1.2) +
-  geom_ribbon(aes(ymin = lower, ymax = upper), fill = "#009E73", alpha = 0.25)
+  geom_line(color = "dodgerblue", size = 1.2) +
+  geom_ribbon(aes(ymin = lower, ymax = upper), fill = "dodgerblue", alpha = 0.25)
 
 png("sexfreq.png")
 
@@ -557,8 +557,8 @@ sex.1a <- tidysex.1 %>%
   geom_area(position = position_stack(reverse = F)) +
   xlab("Age difference") +
   ylab("Probability") +
-  scale_fill_brewer(name = "Sex frequency", 
-                    palette = "Dark2")+
+  scale_fill_manual(name = "Sex frequency", 
+                    values = c(mycols1))+
   theme(axis.text.x = element_text(size=15),
         axis.text.y = element_text(size=15)) +
   theme(text=element_text( size=15)) 
@@ -573,10 +573,10 @@ tidysex.1b <- OrdPred(sex.M1,"Age.difference",DT.sexdata.men)
 
 sex.pred <- tidysex.1b %>%
   ggplot(aes(x = Age.difference, y = fit)) +
-  geom_line(size = 1, color = "#009E73") +
+  geom_line(size = 1, color = "dodgerblue") +
   geom_ribbon(aes(ymin = lwr, ymax = upr),
               alpha = 0.25,
-              fill = "#009E73") +
+              fill = "dodgerblue") +
   xlab("Age difference") +
   ylab("Sex frequency score") +
   theme(axis.text.x = element_text(size=15),
@@ -616,8 +616,8 @@ Effects.sex.M2.plot <- Effects.sex.M2 %>%
   geom_area(position = position_stack(reverse = F)) +
   xlab("Age difference") +
   ylab("Probability") +
-  scale_fill_brewer(name = "Sex frequency", 
-                    palette = "Dark2")+
+  scale_fill_manual(name = "Sex frequency", 
+                    values = c(mycols1))+
   theme(axis.text.x = element_text(size=15),
         axis.text.y = element_text(size=15)) +
   theme(text=element_text( size=15)) 
@@ -632,10 +632,10 @@ Predictions.sex.M2 <- OrdPred(sex.M2, "Age.difference",DT.sexdata.men)
 
 Predictions.sex.M2.plot <- Predictions.sex.M2 %>%
   ggplot(aes(x = Age.difference, y = fit)) +
-  geom_line(size = 1, color = "#009E73") +
+  geom_line(size = 1, color = "dodgerblue") +
   geom_ribbon(aes(ymin = lwr, ymax = upr),
               alpha = 0.25,
-              fill = "#009E73") +
+              fill = "dodgerblue") +
   xlab("Age difference") +
   ylab("Sex Frequency Score") +
   theme(axis.text.x = element_text(size=15),
@@ -677,8 +677,8 @@ Effects.sex.M3a.plot <- Effects.sex.M3a %>%
   geom_area(position = position_stack(reverse = F)) +
   xlab("Age difference") +
   ylab("Probability") +
-  scale_fill_brewer(name = "Sex frequency", 
-                    palette = "Dark2")+
+  scale_fill_manual(name = "Sex frequency", 
+                    values = c(mycols1))+
   theme(axis.text.x = element_text(size=15),
         axis.text.y = element_text(size=15)) +
   theme(text=element_text( size=15)) 
@@ -695,10 +695,10 @@ Predictions.sex.M3a <- OrdPred(sex.M3, "Age.difference",DT.sexdata.men)
 
 Predictions.sex.M3a.plot <- Predictions.sex.M3a %>%
   ggplot(aes(x = Age.difference, y = fit)) +
-  geom_line(size = 1, color = "#009E73") +
+  geom_line(size = 1, color = "dodgerblue") +
   geom_ribbon(aes(ymin = lwr, ymax = upr),
               alpha = 0.25,
-              fill = "#009E73") +
+              fill = "dodgerblue") +
   xlab("Age difference") +
   ylab("Sex Frequency Score") +
   theme(axis.text.x = element_text(size=15),
@@ -728,8 +728,8 @@ Effects.sex.M3b.plot <- Effects.sex.M3b %>%
   geom_area(position = position_stack(reverse = F)) +
   xlab("Participant age") +
   ylab("Probability") +
-  scale_fill_brewer(name = "Sex frequency", 
-                    palette = "Dark2")+
+  scale_fill_manual(name = "Sex frequency", 
+                    values = c(mycols1))+
   theme(axis.text.x = element_text(size=15),
         axis.text.y = element_text(size=15)) +
   theme(text=element_text( size=15)) +
@@ -744,10 +744,10 @@ Predictions.sex.M3b <- OrdPred(sex.M3, "Participant.age",DT.sexdata.men)
 
 Predictions.sex.M3b.plot <- Predictions.sex.M3b %>%
   ggplot(aes(x = Participant.age, y = fit)) +
-  geom_line(size = 1, color = "#009E73") +
+  geom_line(size = 1, color = "dodgerblue") +
   geom_ribbon(aes(ymin = lwr, ymax = upr),
               alpha = 0.25,
-              fill = "#009E73") +
+              fill = "dodgerblue") +
   xlab("Participant age") +
   ylab("Sex Frequency Score") +
   theme(axis.text.x = element_text(size=15),
@@ -888,8 +888,8 @@ tidypart.0 <- data.frame(Effect("Age.difference", partner.M1,
                                latent = T))  
 
 ggplot(tidypart.0, aes(Age.difference, fit)) +
-  geom_line(color = "#009E73", size = 1.2) +
-  geom_ribbon(aes(ymin = lower, ymax = upper), fill = "#009E73", alpha = 0.25)
+  geom_line(color = "dodgerblue", size = 1.2) +
+  geom_ribbon(aes(ymin = lower, ymax = upper), fill = "dodgerblue", alpha = 0.25)
 
 # Extracting the effects generated using the effects function
 
@@ -910,8 +910,8 @@ partner.1a <- tidypart.1 %>%
   geom_area(position = position_stack(reverse = F)) +
   xlab("Age difference") +
   ylab("Probability") +
-  scale_fill_brewer(name = "Partner type", 
-                    palette = "Dark2")+
+  scale_fill_manual(name = "Partner type", 
+                    values = c(mycols))+
   theme(axis.text.x = element_text(size=15),
         axis.text.y = element_text(size=15)) +
   theme(text=element_text( size=15)) 
@@ -926,10 +926,10 @@ tidypart.1b <- OrdPred(partner.M1,"Age.difference",DT.partnerdata.men)
 
 partner.pred <- tidypart.1b %>%
   ggplot(aes(x = Age.difference, y = fit)) +
-  geom_line(size = 1, color = "#009E73") +
+  geom_line(size = 1, color = "dodgerblue") +
   geom_ribbon(aes(ymin = lwr, ymax = upr),
               alpha = 0.25,
-              fill = "#009E73") +
+              fill = "dodgerblue") +
   xlab("Age difference") +
   ylab("Partner type score") +
   theme(axis.text.x = element_text(size=15),
@@ -977,8 +977,8 @@ part.2a <- tidypart.2 %>%
   geom_area(position = position_stack(reverse = T)) +
   xlab("Age difference") +
   ylab("Probability") +
-  scale_fill_brewer(name = "Partner type", 
-                    palette = "Dark2")+
+  scale_fill_manual(name = "Partner type", 
+                    values = c(mycols), guide = guide_legend(reverse = T))+
   theme(axis.text.x = element_text(size=15),
         axis.text.y = element_text(size=15)) +
   theme(text=element_text( size=15)) 
@@ -997,10 +997,10 @@ tidypart.2b <- OrdPred(partner.M2, "Age.difference",DT.partnerdata.men)
 
 part.pred2 <- tidypart.2b %>%
   ggplot(aes(x = Age.difference, y = fit)) +
-  geom_line(size = 1, color = "#009E73") +
+  geom_line(size = 1, color = "dodgerblue") +
   geom_ribbon(aes(ymin = lwr, ymax = upr),
               alpha = 0.25,
-              fill = "#009E73") +
+              fill = "dodgerblue") +
   xlab("Age difference") +
   ylab("Partner type score") +
   theme(axis.text.x = element_text(size=15),
@@ -1043,8 +1043,8 @@ Effects.partner.M3a.plot <- Effects.partner.M3a %>%
   geom_area(position = position_stack(reverse = T)) +
   xlab("Age difference") +
   ylab("Probability") +
-  scale_fill_brewer(name = "Partner type", 
-                    palette = "Dark2")+
+  scale_fill_manual(name = "Partner type", 
+                    values = c(mycols))+
   theme(axis.text.x = element_text(size=15),
         axis.text.y = element_text(size=15)) +
   theme(text=element_text( size=15)) 
@@ -1058,10 +1058,10 @@ Predictions.partner.M3a <- OrdPred(partner.M3,"Age.difference",DT.partnerdata.me
 
 Predictions.partner.M3a.plot <- Predictions.partner.M3a %>%
   ggplot(aes(x = Age.difference, y = fit)) +
-  geom_line(size = 1, color = "#009E73") +
+  geom_line(size = 1, color = "dodgerblue") +
   geom_ribbon(aes(ymin = lwr, ymax = upr),
               alpha = 0.25,
-              fill = "#009E73") +
+              fill = "dodgerblue") +
   xlab("Age difference") +
   ylab("Partner type score") +
   theme(axis.text.x = element_text(size=15),
@@ -1090,8 +1090,8 @@ Effects.partner.M3b.plot <- Effects.partner.M3b %>%
   geom_area(position = position_stack(reverse = T)) +
   xlab("Participant Age") +
   ylab("Probability") +
-  scale_fill_brewer(name = "Partner type", 
-                    palette = "Dark2")+
+  scale_fill_manual(name = "Partner type", 
+                    values = c(mycols))+
   theme(axis.text.x = element_text(size=15),
         axis.text.y = element_text(size=15)) +
   theme(text=element_text( size=15)) +
@@ -1105,10 +1105,10 @@ Predictions.partner.M3b <- OrdPred(partner.M3,"Participant.age",DT.partnerdata.m
 
 Predictions.partner.M3b.plot <- Predictions.partner.M3b %>%
   ggplot(aes(x = Participant.age, y = fit)) +
-  geom_line(size = 1, color = "#009E73") +
+  geom_line(size = 1, color = "dodgerblue") +
   geom_ribbon(aes(ymin = lwr, ymax = upr),
               alpha = 0.25,
-              fill = "#009E73") +
+              fill = "dodgerblue") +
   xlab("Participant age") +
   ylab("Partner type score") +
   theme(axis.text.x = element_text(size=15),
