@@ -256,7 +256,7 @@ ggplot(DT.Agemix.men,aes(Participant.age,Partner.age)) +
               size = 1.25) +
   geom_abline(aes(intercept = 15,slope =1,color = "Same age (x = y)"), size = 1.25) +
   scale_colour_manual(name="Line Colour",
-                      values=c("Population average" = "#D95F02", "Same age (x = y)" ="dodgerblue")) 
+                      values=c("Population average" = "orangered2", "Same age (x = y)" ="dodgerblue")) 
 
 ggsave("Agemixing.png", width = 6.25, height = 5.25,dpi = 600)
 
@@ -298,7 +298,7 @@ ggplot(DT.Agemix.men,aes(Participant.age,Partner.age)) +
               size = 1.25) +
   #geom_abline(aes(intercept = 15,slope =1,color = "Same age (x = y)"), size = 1.25) +
   scale_colour_manual(name="Line Colour",
-                      values=c("Population average" = "#D95F02", "Same age (x = y)" ="dodgerblue"))+
+                      values=c("Population average" = "orangered2", "Same age (x = y)" ="dodgerblue"))+
   geom_line(data = confint, aes(x=participant.age-15, y=lci), linetype = "dashed", color="dodgerblue") +
   geom_line(data = confint, aes(x=participant.age-15, y=uci), linetype = "dashed", color="dodgerblue") +
   geom_segment(aes(x=15-15, y = uci.15, xend = 15-15,yend=lci.15, color = "participant age = 15"), color = "dodgerblue")+
