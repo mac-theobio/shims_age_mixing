@@ -6,6 +6,7 @@ library(tidyverse)
 library(readxl)
 library(sas7bdat)
 library(data.table)
+library(zoo)        #dates
 # =======================
 # Source global functions
 # =======================
@@ -154,35 +155,35 @@ T1.agemix$Age.res.p3 <- AgeResAtRelOnset(currentage = T1.agemix$Age,
 
 # create a variable for relationship duration [weeks]
 
-T1.agemix$Rel.dur.p1 <- as.numeric(difftime(DateCleaning(T1.agemix$End.rel.date.p1), 
-                                 DateCleaning(T1.agemix$Start.rel.date.p1),
-                                 units = "weeks"))
+# T1.agemix$Rel.dur.p1 <- as.numeric(difftime(DateCleaning(T1.agemix$End.rel.date.p1), 
+#                                  DateCleaning(T1.agemix$Start.rel.date.p1),
+#                                  units = "weeks"))
+# 
+# T1.agemix$Rel.dur.p2 <- as.numeric(difftime(DateCleaning(T1.agemix$End.rel.date.p2), 
+#                                  DateCleaning(T1.agemix$Start.rel.date.p2),
+#                                  units = "weeks"))
+# 
+# T1.agemix$Rel.dur.p3 <- as.numeric(difftime(DateCleaning(T1.agemix$End.rel.date.p3), 
+#                                  DateCleaning(T1.agemix$Start.rel.date.p3),
+#                                  units = "weeks"))
 
-T1.agemix$Rel.dur.p2 <- as.numeric(difftime(DateCleaning(T1.agemix$End.rel.date.p2), 
-                                 DateCleaning(T1.agemix$Start.rel.date.p2),
-                                 units = "weeks"))
+# Relationship duration in months
 
-T1.agemix$Rel.dur.p3 <- as.numeric(difftime(DateCleaning(T1.agemix$End.rel.date.p3), 
-                                 DateCleaning(T1.agemix$Start.rel.date.p3),
-                                 units = "weeks"))
+T1.agemix$Rel.dur.p1 <- (as.yearmon(T1.agemix$End.rel.date.p1,"%b%y") - as.yearmon(T1.agemix$Start.rel.date.p1,"%b%y"))*12
 
+T1.agemix$Rel.dur.p2 <- (as.yearmon(T1.agemix$End.rel.date.p2,"%b%y") - as.yearmon(T1.agemix$Start.rel.date.p2,"%b%y"))*12
+
+T1.agemix$Rel.dur.p3 <- (as.yearmon(T1.agemix$End.rel.date.p3,"%b%y") - as.yearmon(T1.agemix$Start.rel.date.p3,"%b%y"))*12
 
 # An indicator was created to denote whether or not the relationship was 
 # ongoing at the time of the interview or ended. Those relationships that were 
 # ongoing had right-censored relationship durations
 
-T1.agemix$Rel.ended.p1 <- as.factor(ifelse(format(T1.agemix$EnrollmentDate, "%Y-%m") == 
-                                 format(DateCleaning(T1.agemix$End.rel.date.p1), "%Y-%m"),
-                               0,1))
+T1.agemix$Rel.ongoing.p1 <- as.yearmon(T1.agemix$EnrollmentDate) == as.yearmon(T1.agemix$End.rel.date.p1, "%b%y")
 
-T1.agemix$Rel.ended.p2 <- as.factor(ifelse(format(T1.agemix$EnrollmentDate, "%Y-%m") == 
-                                 format(DateCleaning(T1.agemix$End.rel.date.p2), "%Y-%m"),
-                               0,1))
+T1.agemix$Rel.ongoing.p2 <- as.yearmon(T1.agemix$EnrollmentDate) == as.yearmon(T1.agemix$End.rel.date.p2, "%b%y")
 
-T1.agemix$Rel.ended.p3 <- as.factor(ifelse(format(T1.agemix$EnrollmentDate, "%Y-%m") == 
-                                 format(DateCleaning(T1.agemix$End.rel.date.p3), "%Y-%m"),
-                               0,1))
-
+T1.agemix$Rel.ongoing.p3 <- as.yearmon(T1.agemix$EnrollmentDate) == as.yearmon(T1.agemix$End.rel.date.p3, "%b%y")
 
 # computing age differences defined as the male partner's age minus the female 
 # partner's age
@@ -215,7 +216,7 @@ T1.agemixing <- T1.agemix %>% transmute(Uid,
                                         Sex.freq.p1,
                                         Partner.type.p1,
                                         Rel.dur.p1,
-                                        Rel.ended.p1,
+                                        Rel.ongoing.p1,
                                         Money.gifts.p1,
                                         NO.2nd.partner,
                                         Age.res.p2,
@@ -226,7 +227,7 @@ T1.agemixing <- T1.agemix %>% transmute(Uid,
                                         Sex.freq.p2,
                                         Partner.type.p2,
                                         Rel.dur.p2,
-                                        Rel.ended.p2,
+                                        Rel.ongoing.p2,
                                         Money.gifts.p2,
                                         NO.3rd.partner,
                                         Age.res.p3,
@@ -237,7 +238,7 @@ T1.agemixing <- T1.agemix %>% transmute(Uid,
                                         Sex.freq.p3,
                                         Partner.type.p3,
                                         Rel.dur.p3,
-                                        Rel.ended.p3,
+                                        Rel.ongoing.p3,
                                         Money.gifts.p3)
 
 table(T1.agemixing$No.partners)
@@ -261,10 +262,10 @@ setDT(T1.agemixing.1) #convert to a data.table for easy manipulation
 
 DT.Agemix <- T1.agemixing.1 %>% melt( measure = patterns("^Age.res", "^Partner.age", "^Age.diff","^Partner.gender",
                                                        "^Condom.freq", "^Sex.freq","^Partner.type", "^Rel.dur",
-                                                       "^Rel.ended", "^Money.gifts"),
+                                                       "^Rel.ongoing", "^Money.gifts"),
                                     value.name = c("Participant.age", "Partner.age", "Age.difference","Partner.gender",
                                                    "Condom.frequency", "Sex.frequency","Partner.type", "Relationship.dur",
-                                                   "Rel.ended", "Money.gifts"),
+                                                   "Rel.ongoing", "Money.gifts"),
                                     variable.name = "Partner") 
 
 
@@ -283,10 +284,10 @@ setDT(T1.agemixing) #convert to a data.table for easy manipulation
 
 DT.Agemix <- T1.agemixing %>% melt( measure = patterns("^Age.res", "^Partner.age", "^Age.diff","^Partner.gender",
                                                          "^Condom.freq", "^Sex.freq","^Partner.type", "^Rel.dur",
-                                                         "^Rel.ended", "^Money.gifts"),
+                                                         "^Rel.ongoing", "^Money.gifts"),
                                       value.name = c("Participant.age", "Partner.age", "Age.difference","Partner.gender",
                                                      "Condom.frequency", "Sex.frequency","Partner.type", "Relationship.dur",
-                                                     "Rel.ended", "Money.gifts"),
+                                                     "Rel.ongoing", "Money.gifts"),
                                       variable.name = "Partner") 
 
 
@@ -321,6 +322,6 @@ summary(DT.Agemix.men)
 # Save the data as an R object
 # ============================
 save(T1.Baseline, file = "/Users/emanuel/Google Drive/SHIMS/SHIMS Baseline data/T1.Baseline.Rdata")
-save(DT.Agemix.new, file = "/Users/emanuel/Google Drive/SHIMS/SHIMS Baseline data/DT.Agemix.new.Rdata")
+# save(DT.Agemix.new, file = "/Users/emanuel/Google Drive/SHIMS/SHIMS Baseline data/DT.Agemix.new.Rdata")
 save(DT.Agemix.men, file = "/Users/emanuel/Google Drive/SHIMS/SHIMS Baseline data/DT.Agemix.men.Rdata")
 
