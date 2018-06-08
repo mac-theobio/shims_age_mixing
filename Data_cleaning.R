@@ -15,7 +15,7 @@ source("Functions_for_SHIMS_study.R")
 # ================
 # Data importation
 # ================
-T1.Baseline <- read.sas7bdat("/Users/emanuel/Dropbox/SHIMS Baseline data/baseline.sas7bdat")
+T1.Baseline <- read.sas7bdat("/Users/emanuel/Google Drive/SHIMS/SHIMS Baseline data/baseline.sas7bdat")
 
 # ordering levels
 freqlevels = c("never" = 3, "sometimes" = 2, "always" = 1,"REF" = 4)
@@ -320,7 +320,7 @@ summary(DT.Agemix.men)
 # ============================
 # Save the data as an R object
 # ============================
-save(T1.Baseline, file = "/Users/emanuel/Dropbox/SHIMS Baseline data/T1.Baseline.Rdata")
-save(DT.Agemix.new, file = "/Users/emanuel/Dropbox/SHIMS Baseline data/DT.Agemix.new.Rdata")
-save(DT.Agemix.men, file = "/Users/emanuel/Dropbox/SHIMS Baseline data/DT.Agemix.men.Rdata")
+save(T1.Baseline, file = "/Users/emanuel/Google Drive/SHIMS/SHIMS Baseline data/T1.Baseline.Rdata")
+save(DT.Agemix.new, file = "/Users/emanuel/Google Drive/SHIMS/SHIMS Baseline data/DT.Agemix.new.Rdata")
+save(DT.Agemix.men, file = "/Users/emanuel/Google Drive/SHIMS/SHIMS Baseline data/DT.Agemix.men.Rdata")
 
