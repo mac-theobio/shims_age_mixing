@@ -1313,7 +1313,8 @@ DT.coxdata.men <- DT.Agemix.men %>%
             Participant.age = Participant.age + 15,
             Age.difference,
             Relationship.dur,
-            Rel.ongoing) %>% 
+            Rel.ongoing,
+            Rel.dissolved = ifelse(Rel.ongoing == T , 0, 1)) %>% 
   drop_na(Age.difference,Relationship.dur,No.partners)
 
 summary(DT.coxdata.men)
@@ -1331,4 +1332,20 @@ U = quantile(DT.coxdata.men$Age.difference, probs = 0.75) + H
 L = quantile(DT.coxdata.men$Age.difference, probs = 0.25) - H
 
 DT.coxdata.men <- filter(DT.coxdata.men, Age.difference >= L & Age.difference <= U)
+
+# creating the survival object
+# Rel.dissoved is an event indicator, equal to 1 if the relationship ended before survey day and 0 for those that were still ongoing and hence censored
+Relationship.surv <- Surv(DT.coxdata.men$Relationship.dur, event = DT.coxdata.men$Rel.dissolved)
+Relationship.surv
+
+# fit Cox PH model of time to relationship dissolution on time constant covariate
+Reldurmod.M1 <- coxph(Surv(Relationship.dur, Rel.dissolved) ~ Age.difference, 
+                      data = DT.coxdata.men)
+
+summary(Reldurmod.M1)
+# an additional year in age differences increases the monthly hazard of relationship dissolution by a factor of 1.014041 i.e 1.4%
+
+# Examinig the distribution of survival times
+plot(survfit(Reldurmod.M1), ylim =c(0.5,1), xlab = "Months", ylab = "Proportion not dissolved")
+
 
