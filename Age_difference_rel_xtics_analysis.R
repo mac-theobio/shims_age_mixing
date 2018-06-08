@@ -1301,3 +1301,31 @@ end_time - start_time
 gam.Partner.adj
 save(gam.Partner.adj, file ="/Users/emanuel/Google Drive/SHIMS/SHIMS Baseline data/gam.Partner.adj.Rdata")
 # load("/Users/emanuel/Google Drive/SHIMS/SHIMS Baseline data/gam.Partner.adj.Rdata")
+
+
+# Relationship duration analysis ------------------------------------------
+
+# ** Subset and Exploratory data analysis-------------------------------------
+
+DT.coxdata.men <- DT.Agemix.men %>% 
+  transmute(Uid = as.factor(Uid),
+            No.partners,
+            Participant.age = Participant.age + 15,
+            Age.difference,
+            Relationship.dur) %>% 
+  drop_na(Age.difference,Relationship.dur,No.partners)
+
+summary(DT.coxdata.men)
+
+# men who reported 1,2,3 partner
+sum(table(DT.coxdata.men$Uid) == 1)
+sum(table(DT.coxdata.men$Uid) == 2)
+sum(table(DT.coxdata.men$Uid) == 3)
+
+# remove high leverage/influential points (major = 3*IQR)
+H = 3*IQR(DT.reldata.men$Age.difference)
+U = quantile(DT.reldata.men$Age.difference, probs = 0.75) + H
+L = quantile(DT.reldata.men$Age.difference, probs = 0.25) - H
+
+DT.reldata.men <- filter(DT.reldata.men, Age.difference >= L & Age.difference <= U)
+
