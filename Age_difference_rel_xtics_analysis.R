@@ -1312,10 +1312,13 @@ DT.coxdata.men <- DT.Agemix.men %>%
             No.partners,
             Participant.age = Participant.age + 15,
             Age.difference,
-            Relationship.dur) %>% 
+            Relationship.dur,
+            Rel.ongoing) %>% 
   drop_na(Age.difference,Relationship.dur,No.partners)
 
 summary(DT.coxdata.men)
+
+DT.coxdata.men <- filter(DT.coxdata.men, Relationship.dur >= 0) # remove some relationships with negative relationship duration
 
 # men who reported 1,2,3 partner
 sum(table(DT.coxdata.men$Uid) == 1)
@@ -1323,9 +1326,9 @@ sum(table(DT.coxdata.men$Uid) == 2)
 sum(table(DT.coxdata.men$Uid) == 3)
 
 # remove high leverage/influential points (major = 3*IQR)
-H = 3*IQR(DT.reldata.men$Age.difference)
-U = quantile(DT.reldata.men$Age.difference, probs = 0.75) + H
-L = quantile(DT.reldata.men$Age.difference, probs = 0.25) - H
+H = 3*IQR(DT.coxdata.men$Age.difference)
+U = quantile(DT.coxdata.men$Age.difference, probs = 0.75) + H
+L = quantile(DT.coxdata.men$Age.difference, probs = 0.25) - H
 
-DT.reldata.men <- filter(DT.reldata.men, Age.difference >= L & Age.difference <= U)
+DT.coxdata.men <- filter(DT.coxdata.men, Age.difference >= L & Age.difference <= U)
 
