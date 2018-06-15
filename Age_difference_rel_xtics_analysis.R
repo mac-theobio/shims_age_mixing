@@ -288,7 +288,7 @@ ggsave("Condompred2.png", width = 5.25, height = 5.25,dpi = 600)
 
 # ** Step 4, adjusted regression spline model--------------------------------------
 
-condom.M3 <- clmm(Condom.frequency ~ ns(Age.difference,df = 4) + ns(Participant.age, df = 3) + ns(No.partners, df=1) + (1|Uid),
+condom.M3 <- clmm(Condom.frequency ~ ns(Age.difference,df = 4) + ns(Participant.age, df = 3) + ns(No.partners, df=4) + (1|Uid),
                   #random =  Uid,
                   data = DT.reldata.men,
                   #link = "logit", dont specify because effects dont work when specify
@@ -1335,17 +1335,106 @@ DT.coxdata.men <- filter(DT.coxdata.men, Age.difference >= L & Age.difference <=
 
 # creating the survival object
 # Rel.dissoved is an event indicator, equal to 1 if the relationship ended before survey day and 0 for those that were still ongoing and hence censored
-Relationship.surv <- Surv(DT.coxdata.men$Relationship.dur, event = DT.coxdata.men$Rel.dissolved)
-Relationship.surv
-
 # fit Cox PH model of time to relationship dissolution on time constant covariate
 Reldurmod.M1 <- coxph(Surv(Relationship.dur, Rel.dissolved) ~ Age.difference, 
                       data = DT.coxdata.men)
 
 summary(Reldurmod.M1)
-# an additional year in age differences increases the monthly hazard of relationship dissolution by a factor of 1.014041 i.e 1.4%
 
-# Examinig the distribution of survival times
-plot(survfit(Reldurmod.M1), ylim =c(0.5,1), xlab = "Months", ylab = "Proportion not dissolved")
+# clustering model; gives you robust variance estimators when you have clusters. It does not change the point estimates though.
+
+Reldurmod.cluster.M1 <- coxph(Surv(Relationship.dur, Rel.dissolved) ~ Age.difference + cluster(Uid), 
+                              data = DT.coxdata.men)
+
+summary(Reldurmod.cluster.M1)
+
+# combines the output when using splines and comes up with matrix for each predictor in model
+predict(Reldurmod.cluster.M1, type = "terms")
 
 
+# an additional year in age differences increases the monthly hazard of relationship dissolution by a factor of 1.014041 i.e 1.4% ,95% CI for the HR: (0.9992,1.029) hence age difference is not significant (the hazard ratio/estimated relative risk for a yearly increase in age difference is  1.014041).
+
+# Examinig the distribution of survival times (adjusted survival curve-adjusted for age difference)
+plot(survfit(Reldurmod.M1), ylim =c(0.5,1), xlab = "Months", ylab = "Survival probability", main = "Survival Curve")
+
+
+Reldurmod.M2 <- coxph(Surv(Relationship.dur, Rel.dissolved) ~ Age.difference + Participant.age + No.partners,
+                      data = DT.coxdata.men)
+
+summary(Reldurmod.M2)
+
+
+# Implementing GAMMs for comparision: partner type model -----------------------------------
+str(colon)
+
+gam.cox <- bam(Relationship.dur ~ s(Age.difference, bs="cr", k = 10) + s(Uid, bs="re"), 
+               family = cox.ph(),
+               data = DT.coxdata.men,
+               weights = Rel.dissolved,
+               nthreads = 4)
+summary(gam.cox)
+
+gam.cox.adj <- bam(Relationship.dur ~ s(Age.difference, bs="cr", k = 10) + s(Participant.age, bs="cr", k = 10) + s(No.partners, bs="cr", k = 10) + s(Uid, bs="re"),
+               family = cox.ph(),
+               data = DT.coxdata.men,
+               weights = Rel.dissolved,
+               nthreads = 4)
+summary(gam.cox)
+# Extras
+
+# cox mixed effects model
+library(coxme)
+Reldurmod.coxme.M1 <- coxme(Surv(Relationship.dur, Rel.dissolved) ~ Age.difference + (1|Uid), 
+                            data = DT.coxdata.men)
+
+summary(Reldurmod.coxme.M1)
+
+# frailty model
+Reldurmod.frailty.M1 <- coxph(Surv(Relationship.dur, Rel.dissolved) ~ Age.difference + frailty(Uid), 
+                              data = DT.coxdata.men)
+
+summary(Reldurmod.frailty.M1)
+
+# computing the expected survival
+data(pbc)
+pbc
+
+pbcfit <- coxph(Surv(time, status==2) ~ age + log(bili) + log(protime) + log (albumin) + edema, pbc)
+pbcfit
+
+# Create a data set corresponding to the hypothetical subject
+temp <- data.frame(age=53, edema= 0, bili=2, protime=12 , albumin=2)
+
+# Obtain and plot the expected curve of the hypothetical person
+
+sfit <- survfit(pbcfit, newdata=temp)
+plot(sfit, xlab="Years",ylab="Expected Survival")
+
+xfit <- coxph(Surv(time, status==2)~age + log(bili) + strata(edema), data=pbc)
+xfit
+temp <- data.frame(age=c(53, 60), bili=c(2, 3))
+curves <- survfit(xfit, newdata=temp)
+print(curves)
+plot(curves[3,])
+
+
+visreg(Reldurmod.cluster.M1,"Age.difference",trans = exp,ylab = "Hazard ratio")
+
+tidyreldur.2 <- visreg(Reldurmod.M1,
+                       xvar = "Age.difference",
+                       ylab = "Hazard ratio",
+                       type = "contrast",
+                       trans = exp) %$%
+  data.frame(fit) %>%
+  mutate(hr = visregFit,
+         lwr = visregLwr,
+         upr = visregUpr)
+
+
+library(survminer) # good cox plots
+plot(survfit(Reldurmod.M1))
+ggsurvplot(survfit(Reldurmod.M1), data = DT.coxdata.men, ggtheme = theme_bw(), palette="dodgerblue" )
+
+new.agedf <- data.frame(Age.difference = c(-10,0,20))
+plot(survfit(Reldurmod.M1,newdata = new.agedf))
+ggsurvplot(survfit(Reldurmod.M1,newdata = new.agedf),data = new.agedf, ggtheme = theme_bw(), palette="dodgerblue" )

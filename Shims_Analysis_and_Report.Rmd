@@ -21,11 +21,11 @@ library(dotwhisker) #make dot whisker plots
 library(broom)      #convert objects into tidy data frame: tidy()
 library(visreg)     #getting "contrast" hazard ratios
 library(nlme)       #fitting non linear mixed effects models
-#install_github("baptiste/egg")
-library(egg)
+# install_github("baptiste/egg")
+# library(egg)
 
-setwd("C:/Users/Emanuel/Desktop/shims_age_mixing")
-#setwd("/Users/emanuel/Documents/shims_age_mixing/")
+#setwd("C:/Users/Emanuel/Desktop/shims_age_mixing")
+setwd("/Users/emanuel/Documents/shims_age_mixing/")
 source("Functions_for_SHIMS_study.R")
 load("T1.agemix.Rdata")
 
@@ -113,7 +113,7 @@ DT.rel.men <- na.exclude(subset(DT.reldata, Gender == "Male" & Age.participant >
 # ordering levels
 freqlevels = c("never","sometimes","always")
 sexlevels = c("1","between 2-5","between 6-10","more than 10")
-partlevels = c("husband/wife","regular partner","casual partner")
+partlevels = c("casual partner","regular partner","husband/wife")
 
 DT.reldata.men <- DT.rel.men %>% 
   transmute(Uid = as.factor(Uid),
@@ -627,7 +627,7 @@ theme_set(theme_bw())
 
 cond.1a <- tidycond.1 %>%
   ggplot(aes(x = Age.difference, y = prob, fill = cond)) +
-  geom_area() +
+  geom_area(position = position_stack(reverse = T)) +
   xlab("Age difference") +
   ylab("Probability") +
   scale_fill_brewer(name = "Condom use", 
@@ -886,7 +886,7 @@ theme_set(theme_bw())
 #univariate
 part.1a <- tidypart.1 %>%
   ggplot(aes(x = Age.difference, y = prob, fill = cond)) +
-  geom_area() +
+  geom_area(position = position_stack(reverse = T)) +
   xlab("Age difference") +
   ylab("Probability") +
   scale_fill_brewer(name = "Partner type", 
@@ -933,7 +933,7 @@ theme_set(theme_bw())
 #multivariate
 part.2a <- tidypart.2a %>%
   ggplot(aes(x = Age.difference, y = prob, fill = cond)) +
-  geom_area() +
+  geom_area(position = position_stack(reverse = T)) +
   xlab("Age difference") +
   ylab("Probability") +
   scale_fill_brewer(name = "Partner type", 
