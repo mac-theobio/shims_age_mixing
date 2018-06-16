@@ -82,11 +82,11 @@ partnersex = c("male" = 1, "female" = 2, "DK" = 3, "REF" = 4)
 # Set the data type for some of the variables
 
 T1.agemix <- T1.Baseline %>% transmute(Uid = uid,
+                                       EnrollmentDate = dmy(REQ_erdt),
                                        Region = region,
                                        Gender = factor(REQsex, levels = gender, labels = names(gender)),
                                        Age = age_REQ,
                                        No.partners = as.numeric(RQtnp6m),
-                                       EnrollmentDate = as.Date(REQ_erdt, "%d%b%y"),
                                        Start.rel.date.p1 = RQp1rbmy,
                                        End.rel.date.p1 = RQp1remy,
                                        Partner.age.p1 = as.numeric(RQp1ftyy),
@@ -125,7 +125,7 @@ T1.agemix <- T1.Baseline %>% transmute(Uid = uid,
 # ==============================
 
 T1.agemix <- filter(T1.agemix, Gender == "male")
-
+T1.agemix[,3:32][T1.agemix[,3:32] == "REF"] <- NA
 # ================
 # Data exploration
 # ================
@@ -207,7 +207,9 @@ T1.agemix$Age.diff.p3 <- ifelse(T1.agemix$Gender == "male",
 # We remove the variables that we no longer require
 
 T1.agemixing <- T1.agemix %>% transmute(Uid,
+                                        EnrollmentDate,
                                         No.partners,
+                                        Start.rel.date.p1 = DateCleaning(T1.agemix$Start.rel.date.p1),
                                         Age.res.p1,
                                         Partner.age.p1,
                                         Age.diff.p1,
@@ -219,6 +221,7 @@ T1.agemixing <- T1.agemix %>% transmute(Uid,
                                         Rel.ongoing.p1,
                                         Money.gifts.p1,
                                         NO.2nd.partner,
+                                        Start.rel.date.p2 = DateCleaning(T1.agemix$Start.rel.date.p2),
                                         Age.res.p2,
                                         Partner.age.p2,
                                         Age.diff.p2,
@@ -230,6 +233,7 @@ T1.agemixing <- T1.agemix %>% transmute(Uid,
                                         Rel.ongoing.p2,
                                         Money.gifts.p2,
                                         NO.3rd.partner,
+                                        Start.rel.date.p3 = DateCleaning(T1.agemix$Start.rel.date.p3),
                                         Age.res.p3,
                                         Partner.age.p3,
                                         Age.diff.p3,
@@ -252,7 +256,6 @@ table(T1.agemixing$NO.3rd.partner)
 summary(T1.agemixing)
 
 T1.agemixing.1 <- filter(T1.agemixing, is.nan(No.partners) | No.partners != 0)
-T1.agemixing.1[T1.agemixing.1 == "REF"] <- NA
 summary(T1.agemixing.1)
 # ======================
 # convert to long format
@@ -260,10 +263,10 @@ summary(T1.agemixing.1)
 
 setDT(T1.agemixing.1) #convert to a data.table for easy manipulation
 
-DT.Agemix <- T1.agemixing.1 %>% melt( measure = patterns("^Age.res", "^Partner.age", "^Age.diff","^Partner.gender",
+DT.Agemix <- T1.agemixing.1 %>% melt( measure = patterns("^Start.rel.date","^Age.res", "^Partner.age", "^Age.diff","^Partner.gender",
                                                        "^Condom.freq", "^Sex.freq","^Partner.type", "^Rel.dur",
                                                        "^Rel.ongoing", "^Money.gifts"),
-                                    value.name = c("Participant.age", "Partner.age", "Age.difference","Partner.gender",
+                                    value.name = c("Start.rel.date","Participant.age", "Partner.age", "Age.difference","Partner.gender",
                                                    "Condom.frequency", "Sex.frequency","Partner.type", "Relationship.dur",
                                                    "Rel.ongoing", "Money.gifts"),
                                     variable.name = "Partner") 
@@ -282,10 +285,10 @@ n_distinct(DT.Agemix.3part$Uid)
 # ======================
 setDT(T1.agemixing) #convert to a data.table for easy manipulation
 
-DT.Agemix <- T1.agemixing %>% melt( measure = patterns("^Age.res", "^Partner.age", "^Age.diff","^Partner.gender",
+DT.Agemix <- T1.agemixing %>% melt( measure = patterns("^Start.rel.date","^Age.res", "^Partner.age", "^Age.diff","^Partner.gender",
                                                          "^Condom.freq", "^Sex.freq","^Partner.type", "^Rel.dur",
                                                          "^Rel.ongoing", "^Money.gifts"),
-                                      value.name = c("Participant.age", "Partner.age", "Age.difference","Partner.gender",
+                                      value.name = c("Start.rel.date","Participant.age", "Partner.age", "Age.difference","Partner.gender",
                                                      "Condom.frequency", "Sex.frequency","Partner.type", "Relationship.dur",
                                                      "Rel.ongoing", "Money.gifts"),
                                       variable.name = "Partner") 
@@ -294,7 +297,7 @@ DT.Agemix <- T1.agemixing %>% melt( measure = patterns("^Age.res", "^Partner.age
 # filter all rows where we lack a single measurement
 
 DT.Agemix.new <- DT.Agemix[rowSums(is.na(DT.Agemix)) < 10, ]
-
+summary(DT.Agemix.new)
 # men who reported more than 1,2,3 partner
 sum(table(DT.Agemix.new$Uid) == 1)
 sum(table(DT.Agemix.new$Uid) == 2)
@@ -304,9 +307,6 @@ sum(table(DT.Agemix.new$Uid) == 3)
 # Remove all data from respondents younger than 15 years old
 # Subtract 15 from all respondent ages, so that a respondent.age.at.relationship.formation” is
 # coded 0 for a man who started a relationship at age 15 years old.
-
-#DT.Agemix[DT.Agemix == "REF"] <- NA
-
 
 DT.Agemix.men <- DT.Agemix.new %>% 
   filter(Participant.age >= 15) %>% #removes na's in participant age
@@ -322,6 +322,5 @@ summary(DT.Agemix.men)
 # Save the data as an R object
 # ============================
 save(T1.Baseline, file = "/Users/emanuel/Google Drive/SHIMS/SHIMS Baseline data/T1.Baseline.Rdata")
-# save(DT.Agemix.new, file = "/Users/emanuel/Google Drive/SHIMS/SHIMS Baseline data/DT.Agemix.new.Rdata")
 save(DT.Agemix.men, file = "/Users/emanuel/Google Drive/SHIMS/SHIMS Baseline data/DT.Agemix.men.Rdata")
 
