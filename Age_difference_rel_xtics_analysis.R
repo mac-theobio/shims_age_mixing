@@ -13,6 +13,8 @@ library(dotwhisker)   #make dot whisker plots
 library(broom)        #convert objects into tidy data frame: tidy()
 library(visreg)       #getting "contrast" hazard ratios
 library(mgcv)         #for fitting GAMs
+library(lubridate)
+library(survminer)
 # library(RColorBrewer) #creating color palletes
 # library(egg)      #devtools::install_github("baptiste/egg") #for plot management
 # library(strcode)  #devtools::install_github("lorenzwalthert/strcode") #for code structuring with sub/headings
@@ -26,7 +28,7 @@ mycols <- c("#5C75F4", "#D95F02", "#1B9E77", "#D80491")
 mycols1 <- c("#D80491", "#1B9E77","#D95F02", "#5C75F4")
 source("Functions_for_SHIMS_study.R")
 
-
+summary(DT.Agemix.men)
 # Condom Use Analysis -----------------------------------------------------
 
 # ** Subset and Exploratory data analysis-------------------------------------
@@ -41,6 +43,9 @@ partlevels = c("casual partner","regular partner","husband/wife")
 DT.reldata.men <- DT.Agemix.men %>% 
   transmute(Uid = as.factor(Uid),
             No.partners,
+            EnrollmentDate,
+            Start.rel.date,
+            Timedifference = interval(Start.rel.date,EnrollmentDate)  %/% months(1),
             Participant.age = Participant.age + 15,
             Age.difference,
             Condom.frequency = ordered(Condom.frequency, levels = freqlevels),
@@ -60,6 +65,9 @@ U = quantile(DT.reldata.men$Age.difference, probs = 0.75) + H
 L = quantile(DT.reldata.men$Age.difference, probs = 0.25) - H
 
 DT.reldata.men <- filter(DT.reldata.men, Age.difference >= L & Age.difference <= U)
+
+# Remove all the relationships that were formed less than six months before survey date
+DT.reldata.men.2 <- filter(DT.reldata.men, Timedifference >= 6)
 
 # frequncies of the condom use levels
 
@@ -455,6 +463,9 @@ sexlevels = c("1","between 2-5","between 6-10","more than 10")
 
 DT.sexdata.men <- DT.Agemix.men %>% 
   transmute(Uid = as.factor(Uid),
+            EnrollmentDate,
+            Start.rel.date,
+            Timedifference = interval(Start.rel.date,EnrollmentDate)  %/% months(1),
             No.partners,
             Participant.age = Participant.age + 15,
             Age.difference,
@@ -476,9 +487,13 @@ L = quantile(DT.sexdata.men$Age.difference, probs = 0.25) - H
 
 DT.sexdata.men <- filter(DT.sexdata.men, Age.difference >= L & Age.difference <= U)
 
+# Remove all the relationships that were formed less than six months before survey date
+DT.sexdata.men <- filter(DT.sexdata.men, Timedifference >= 6)
+
 # the distribution of age difference by sex frequency
 # to contrast age difference across the 3 condom use levels we use the following boxplot. 
 # The three condom use levels have a similar age difference
+
 plot(Age.difference ~ Sex.frequency,
      data = DT.sexdata.men)
 
@@ -588,7 +603,7 @@ ggsave("Sexpred.png", width = 5.25, height = 4.35,dpi = 600)
 
 # ** Step 3, regression spline model --------------------------
 
-sex.M2 <- clmm(Sex.frequency ~ ns(Age.difference,df = 5) + (1|Uid),
+sex.M2 <- clmm(Sex.frequency ~ ns(Age.difference,df = 4) + (1|Uid),
                   data = DT.sexdata.men,
                   nAGQ = 7,
                   Hess = T) #if you need to call summary
@@ -650,7 +665,7 @@ table(predictions$pred.cat)
 
 # ** Step 4, adjusted regression spline model--------------------------------------
 
-sex.M3 <- clmm(Sex.frequency ~ ns(Age.difference,df = 3) + ns(Participant.age, df = 4)+ No.partners + (1|Uid),
+sex.M3 <- clmm(Sex.frequency ~ ns(Age.difference,df = 2) + ns(Participant.age, df = 3)+ No.partners + (1|Uid),
                data = DT.sexdata.men,
                nAGQ = 7,
                Hess = T) #if you need to call summary
@@ -1176,7 +1191,7 @@ DT.coxdata.men <- DT.Agemix.men %>%
   transmute(Uid = as.factor(Uid),
             No.partners,
             Participant.age = Participant.age + 15,
-            Age.difference,
+            Age.difference = round(Age.difference,6),
             Relationship.dur,
             Rel.ongoing,
             Rel.dissolved = ifelse(Rel.ongoing == T , 0, 1)) %>% 
@@ -1205,25 +1220,140 @@ Reldurmod.M1 <- coxph(Surv(Relationship.dur, Rel.dissolved) ~ Age.difference,
                       data = DT.coxdata.men)
 
 summary(Reldurmod.M1)
+AIC(Reldurmod.M1)
+# an additional year in age differences increases the monthly hazard of relationship dissolution by a factor of 1.014041 i.e 1.4% ,95% CI for the HR: (0.9992,1.029) hence age difference is not significant (the hazard ratio/estimated relative risk for a yearly increase in age difference is  1.014041).
 
 # clustering model; gives you robust variance estimators when you have clusters. It does not change the point estimates though.
 
-Reldurmod.cluster.M1 <- coxph(Surv(Relationship.dur, Rel.dissolved) ~ Age.difference + cluster(Uid), 
+Reldurmod.cluster.M1 <- coxph(Surv(Relationship.dur, Rel.dissolved) ~ ns(Age.difference, df = ) + cluster(Uid), 
                               data = DT.coxdata.men)
 
 summary(Reldurmod.cluster.M1)
 
+# how does change in age difference relative to mean age difference affect the hazard?
+
+tidyreldur.1 <- visreg(Reldurmod.cluster.M1,
+                       xvar = "Age.difference",
+                       ylab = "Hazard ratio",
+                       type = "contrast", # only option for coxph models
+                       trans = exp,
+                       plot = F) %$%
+  data.frame(fit) %>%
+  mutate(hr = visregFit,
+         lwr = visregLwr,
+         upr = visregUpr)
+
+rel.pred.1 <- tidyreldur.1 %>%
+  ggplot(aes(x = Age.difference, y = hr)) +
+  geom_ribbon(aes(ymin = lwr, ymax = upr),
+              alpha = 0.25, 
+              fill = "dodgerblue") +
+  geom_line(size = 1, 
+            color = "dodgerblue") +
+  geom_hline(yintercept = 1, linetype = "dashed") +
+  xlab("Age difference") +
+  ylab("Hazard Ratio") +
+  theme(axis.text.x = element_text(size=12),
+        axis.text.y = element_text(size=12))+
+  theme(text=element_text(size=12)) 
+
+rel.pred.1
+
+# ggsave("rel.pred.1", width = 5.25, height = 4.35,dpi = 600)
+# The hazard of ending a rationship was higher for participants who were 4.5 years older or more than their partners relative to the participants who had mean age difference.
+
+# visualizing expected survival 
+
+# Examinig the distribution of survival times (adjusted survival curve-adjusted for age difference)
+plot(survfit(Reldurmod.cluster.M1), ylim =c(0,1), xlab = "Months", ylab = "Survival probability", main = "Survival Curve")
+
+# how the estimated survival depends on age difference
+# create a new df
+
+new.df <- with(DT.coxdata.men, data.frame(Age.difference = c(-12.8045112781955,0,5,23.6247436773753)))
+
+plot(survfit(Reldurmod.cluster.M1, newdata = new.df),conf.int = F, ylim =c(0.5,1), xlab = "Months", ylab = "Survival probability", main = "Survival Curve")
+
+
+xx <- survfit(Reldurmod.cluster.M1, newdata = new.df)%>%
+  tidy() %>%
+  select(-matches("n.risk")) %>%
+  gather(var, value, -time) 
+
+# ggsurvplot from survminer to plot this in ggplot
+
+mean(DT.coxdata.men$Age.difference)
+hist(DT.coxdata.men$Age.difference) 
+ggplot(DT.coxdata.men, aes(Age.difference)) + geom_histogram(bins = 20)
+
+
+# are there differences in survival among younger, non AG, inter-GAP and intra Gap
+# you should very carefully determine the optimal cut point for continous variables in survival plots
+
+DT.coxdata.men <- DT.coxdata.men %>% 
+  mutate(Age.diff.cat = cut(Age.difference, breaks = c(-Inf, 0,5,10, Inf), labels = c("younger", "non-AD", "intra-GAD", "inter-GAD")))
+
+
+# survival curves from the Kaplan Meier estimate
+
+ggsurvplot(survfit(Surv(Relationship.dur, Rel.dissolved) ~ Age.diff.cat + cluster(Uid), 
+        data = DT.coxdata.men), pval = F, legend = "right", legend.title = "Age Gaps", legend.labs = c("younger", "non-AD", "intra-GAD", "inter-GAD"), ggtheme = theme_bw(), censor = F)
+
+
+# survival curves from a cox ph model
+
+fit <- coxph(Surv(Relationship.dur, Rel.dissolved) ~ Age.diff.cat + cluster(Uid), 
+             data = DT.coxdata.men)
+fit
+
+new.df <- data.frame(Age.diff.cat = c("younger","non-AD","intra-GAD", "inter-GAD"))
+
+ggsurvplot(survfit(fit, newdata = new.df),data = new.df, pval = F, legend = "right", legend.title = "Age Gaps", legend.labs = c("younger", "non-AD", "intra-GAD", "inter-GAD"), ggtheme = theme_bw(), censor = F, conf.int = F)
+
+# Roxy's approach of selecting to dispalay survival curves of 5 age differences
+
+percentiles <- round(quantile(DT.coxdata.men$Age.difference,prob = c(.025, .25, .5, .75, .975), type = 3),6)
+percentiles
+
+Exp.survival.M1 <- survexp(~ Age.difference, 
+                        data = DT.coxdata.men, 
+                        ratetable = Reldurmod.cluster.M1) %>%
+  tidy() %>%
+  select(-matches("n.risk")) %>%
+  gather(var, value, -time) %>%
+  mutate(var = gsub("surv.Age.difference\\.", "", var),
+         Age.difference = gsub("^\\D", "-", var) %>%
+           as.numeric()) %>%
+  select(-var) %>%
+  filter(Age.difference %in% percentiles) %>%
+  mutate(Age.difference = factor(Age.difference, 
+                                 levels = percentiles,
+                                 labels = c("4yrs younger", 
+                                            "1yr older", 
+                                            "4yrs older",
+                                            "7yrs older",
+                                            "17yrs older")))
+
+reldur.1 <- Exp.survival.M1 %>%
+  ggplot(aes(x = time, 
+             y = value)) +
+  geom_line(aes(color = Age.difference), size = 1) +
+  geom_hline(yintercept = 0.5, colour = "black", linetype = 2) + 
+  xlab("Relationship duration (Months)") +
+  ylab("Probability of survival") +
+  scale_color_brewer(name = "Age difference", palette = "Dark2") +
+  theme(axis.text.x = element_text(size=12),
+        axis.text.y = element_text(size=12))+
+  theme(text=element_text(size=12))
+reldur.1
+
+# Examinig the distribution of survival times (adjusted survival curve-adjusted for age difference)
+plot(survfit(Reldurmod.cluster.M1), ylim =c(0,1), xlab = "Months", ylab = "Survival probability", main = "Survival Curve")
+
 # combines the output when using splines and comes up with matrix for each predictor in model
 predict(Reldurmod.cluster.M1, type = "terms")
 
-
-# an additional year in age differences increases the monthly hazard of relationship dissolution by a factor of 1.014041 i.e 1.4% ,95% CI for the HR: (0.9992,1.029) hence age difference is not significant (the hazard ratio/estimated relative risk for a yearly increase in age difference is  1.014041).
-
-# Examinig the distribution of survival times (adjusted survival curve-adjusted for age difference)
-plot(survfit(Reldurmod.M1), ylim =c(0.5,1), xlab = "Months", ylab = "Survival probability", main = "Survival Curve")
-
-
-Reldurmod.M2 <- coxph(Surv(Relationship.dur, Rel.dissolved) ~ Age.difference + Participant.age + No.partners,
+Reldurmod.M2 <- coxph(Surv(Relationship.dur, Rel.dissolved) ~ ns(Age.difference,2) + Participant.age + ns(No.partners,1) +  cluster(Uid), 
                       data = DT.coxdata.men)
 
 summary(Reldurmod.M2)
@@ -1299,7 +1429,7 @@ gam.Sex <- bam(Sex.frequency ~ s(Age.difference, bs="cr", k = 10) + s(Uid, bs="r
                data = DT.sexdata.men.gamm,
                family = ocat(R = 4),
                method = "fREML", #fREML is much faster and yields similar results like RELM
-               nthreads = 4,
+               nthreads = 2,
                discrete = T)
 
 end_time <- Sys.time()
@@ -1315,7 +1445,7 @@ gam.Sex.adj <- bam(Sex.frequency ~ s(Age.difference, bs="cr", k = 10) + s(Partic
                    data = DT.sexdata.men.gamm,
                    family = ocat(R = 4),
                    method = "fREML", #fREML is much faster and yields similar results like RELM
-                   nthreads = 4,
+                   nthreads = 2,
                    discrete = T)
 
 end_time <- Sys.time()
@@ -1366,8 +1496,6 @@ gam.Partner.adj
 save(gam.Partner.adj, file ="/Users/emanuel/Google Drive/SHIMS/SHIMS Baseline data/gam.Partner.adj.Rdata")
 # load("/Users/emanuel/Google Drive/SHIMS/SHIMS Baseline data/gam.Partner.adj.Rdata")
 
-
-
 # ** Implementing GAMMs for comparision: Relationship duration model -----------------------------------
 
 gam.cox <- gam(Relationship.dur ~ s(Age.difference, bs="cr", k = 10) + s(Uid, bs="re"), 
@@ -1377,12 +1505,12 @@ gam.cox <- gam(Relationship.dur ~ s(Age.difference, bs="cr", k = 10) + s(Uid, bs
                nthreads = 4)
 summary(gam.cox)
 
-gam.cox.adj <- gam(Relationship.dur ~ s(Age.difference, bs="cr", k = 10) + s(Participant.age, bs="cr", k = 10) + s(No.partners, bs="cr", k = 10) + s(Uid, bs="re"),
+gam.cox.adj <- gam(Relationship.dur ~ s(Age.difference, bs="cr", k = 10) + s(Participant.age, bs="cr", k = 10) + s(No.partners, bs="cr", k = 10),
                family = cox.ph(),
                data = DT.coxdata.men,
                weights = Rel.dissolved,
                nthreads = 4)
-summary(gam.cox)
+summary(gam.cox.adj)
 
 
 # cox mixed effects model
@@ -1419,20 +1547,6 @@ temp <- data.frame(age=c(53, 60), bili=c(2, 3))
 curves <- survfit(xfit, newdata=temp)
 print(curves)
 plot(curves[3,])
-
-
-visreg(Reldurmod.cluster.M1,"Age.difference",trans = exp,ylab = "Hazard ratio")
-
-tidyreldur.2 <- visreg(Reldurmod.M1,
-                       xvar = "Age.difference",
-                       ylab = "Hazard ratio",
-                       type = "contrast",
-                       trans = exp) %$%
-  data.frame(fit) %>%
-  mutate(hr = visregFit,
-         lwr = visregLwr,
-         upr = visregUpr)
-
 
 library(survminer) # good cox plots
 plot(survfit(Reldurmod.M1))
