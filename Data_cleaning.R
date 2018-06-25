@@ -7,6 +7,7 @@ library(readxl)
 library(sas7bdat)
 library(data.table)
 library(zoo)        #dates
+library(lubridate)
 # =======================
 # Source global functions
 # =======================
@@ -210,6 +211,7 @@ T1.agemixing <- T1.agemix %>% transmute(Uid,
                                         EnrollmentDate,
                                         No.partners,
                                         Start.rel.date.p1 = DateCleaning(T1.agemix$Start.rel.date.p1),
+                                        End.rel.date.p1,
                                         Age.res.p1,
                                         Partner.age.p1,
                                         Age.diff.p1,
@@ -222,6 +224,7 @@ T1.agemixing <- T1.agemix %>% transmute(Uid,
                                         Money.gifts.p1,
                                         NO.2nd.partner,
                                         Start.rel.date.p2 = DateCleaning(T1.agemix$Start.rel.date.p2),
+                                        End.rel.date.p2,
                                         Age.res.p2,
                                         Partner.age.p2,
                                         Age.diff.p2,
@@ -234,6 +237,7 @@ T1.agemixing <- T1.agemix %>% transmute(Uid,
                                         Money.gifts.p2,
                                         NO.3rd.partner,
                                         Start.rel.date.p3 = DateCleaning(T1.agemix$Start.rel.date.p3),
+                                        End.rel.date.p3,
                                         Age.res.p3,
                                         Partner.age.p3,
                                         Age.diff.p3,
@@ -263,10 +267,10 @@ summary(T1.agemixing.1)
 
 setDT(T1.agemixing.1) #convert to a data.table for easy manipulation
 
-DT.Agemix <- T1.agemixing.1 %>% melt( measure = patterns("^Start.rel.date","^Age.res", "^Partner.age", "^Age.diff","^Partner.gender",
+DT.Agemix <- T1.agemixing.1 %>% melt( measure = patterns("^Start.rel.date","^End.rel.date","^Age.res", "^Partner.age", "^Age.diff","^Partner.gender",
                                                        "^Condom.freq", "^Sex.freq","^Partner.type", "^Rel.dur",
                                                        "^Rel.ongoing", "^Money.gifts"),
-                                    value.name = c("Start.rel.date","Participant.age", "Partner.age", "Age.difference","Partner.gender",
+                                    value.name = c("Start.rel.date","End.rel.date","Participant.age", "Partner.age", "Age.difference","Partner.gender",
                                                    "Condom.frequency", "Sex.frequency","Partner.type", "Relationship.dur",
                                                    "Rel.ongoing", "Money.gifts"),
                                     variable.name = "Partner") 
@@ -285,10 +289,10 @@ n_distinct(DT.Agemix.3part$Uid)
 # ======================
 setDT(T1.agemixing) #convert to a data.table for easy manipulation
 
-DT.Agemix <- T1.agemixing %>% melt( measure = patterns("^Start.rel.date","^Age.res", "^Partner.age", "^Age.diff","^Partner.gender",
+DT.Agemix <- T1.agemixing %>% melt( measure = patterns("^Start.rel.date","^End.rel.date","^Age.res", "^Partner.age", "^Age.diff","^Partner.gender",
                                                          "^Condom.freq", "^Sex.freq","^Partner.type", "^Rel.dur",
                                                          "^Rel.ongoing", "^Money.gifts"),
-                                      value.name = c("Start.rel.date","Participant.age", "Partner.age", "Age.difference","Partner.gender",
+                                      value.name = c("Start.rel.date","End.rel.date","Participant.age", "Partner.age", "Age.difference","Partner.gender",
                                                      "Condom.frequency", "Sex.frequency","Partner.type", "Relationship.dur",
                                                      "Rel.ongoing", "Money.gifts"),
                                       variable.name = "Partner") 
