@@ -16,6 +16,10 @@ library(nlme) # fitting lmm
 load("/Users/emanuel/Google Drive/SHIMS/SHIMS Baseline data/DT.Agemix.men.Rdata")
 theme_set(theme_bw()) # set global plot theme
 
+xx <- filter(DT.Agemix.men, Age.difference >= 10)
+length(table(xx$Uid))
+
+length(table(DT.Agemix.men$Uid))
 # =========================
 # Subset and Exploratory data analysis
 # =========================
@@ -49,6 +53,38 @@ ggplot(DT.Agemix.men,aes(Participant.age,Partner.age)) +
   ylab("Partner age") +
   scale_x_continuous(labels = function(x)x+15, breaks = scales::pretty_breaks(n = 10)) 
 
+# the distribution of the age of the male participants
+
+ggplot(data = DT.Agemix.men, aes(Participant.age + 15)) +
+  geom_histogram(bins = 30) +
+  xlab("Participant's age") +
+  ylab("Frequency") +
+  theme(axis.text.x = element_text(size=15),
+        axis.text.y = element_text(size=15)) +
+  theme(text=element_text( size=15)) +
+  scale_x_continuous(breaks = scales::pretty_breaks(n = 10)) + 
+  scale_y_continuous(breaks = c(0,200,400,600,800), limits = c(0,600))
+
+ggsave("participanthist.png", width = 6.25, height = 5.25,dpi = 600)
+
+ggplot(data = DT.Agemix.men, aes(Partner.age)) +
+  geom_histogram(bins = 30, na.rm = T) +
+  xlab("Partner's age") +
+  ylab("Frequency") +
+  theme(axis.text.x = element_text(size=15),
+        axis.text.y = element_text(size=15)) +
+  theme(text=element_text( size=15)) +
+  scale_x_continuous(breaks = scales::pretty_breaks(n = 10)) + 
+  scale_y_continuous(breaks = scales::pretty_breaks(n = 5.5))
+
+ggsave("partnerhist.png", width = 6.25, height = 5.25,dpi = 600)
+
+# measures of central tendency and dispersion
+summary(DT.Agemix.men$Partner.age)
+IQR(DT.Agemix.men$Partner.age)
+
+summary(DT.Agemix.men$Participant.age +15)
+IQR(DT.Agemix.men$Participant.age +15)
 # =======================
 # Random intercept model
 # =======================
@@ -191,7 +227,7 @@ agemix.M4 <- lme(Partner.age~ Participant.age,
                                  random = ~1|Uid)
 
 summary(agemix.M4)
-
+intervals(agemix.M4)
 # compare the homoscedastic(constant variance) and heteroscedastic models
 anova(agemix.M2,agemix.M4)
 # the result of this likelihood ratio test is significant (p<0.001), we choose the 
@@ -267,12 +303,7 @@ sdij <- function(participant.age = 15){
   sd = sqrt(agemix.M5[["sigma"]]^2 * (abs(participant.age-15 +1))^(2* as.numeric(agemix.M5[["modelStruct"]][["varStruct"]])))
   return(sd)
   }
-sdij(participant.age = 30)
-
-lci.15 = fixef(agemix.M5)[["(Intercept)"]] - 1.96 * sdij(participant.age = 15)
-uci.15 = fixef(agemix.M5)[["(Intercept)"]] + 1.96 * sdij(participant.age = 15)
-lci.30 = (fixef(agemix.M5)[["(Intercept)"]] + fixef(agemix.M5)[["Participant.age"]]*(30-15)) - (1.96 * sdij(participant.age = 30))
-uci.30 = (fixef(agemix.M5)[["(Intercept)"]] + fixef(agemix.M5)[["Participant.age"]]*(30-15)) + (1.96 * sdij(participant.age = 30))
+sdij(participant.age = 13)
 
 ci <- function(model = agemix.M5, participant.age = 15){
   lci = (fixef(model)[["(Intercept)"]] + fixef(model)[["Participant.age"]]*(participant.age-15)) - (1.96 * sdij(participant.age))
@@ -283,27 +314,32 @@ ci <- function(model = agemix.M5, participant.age = 15){
 
 part <- seq(15,49,1)
 confint <- ci(model = agemix.M5, participant.age = part)
+confint.between <- data.frame(participant.age = part,
+                              lci.1 = fixef(agemix.M5)[["(Intercept)"]] + fixef(agemix.M5)[["Participant.age"]]*(part-15) - 1.96 * sqrt(as.numeric(VarCorr(agemix.M5)[1])),
+                              uci.1 = fixef(agemix.M5)[["(Intercept)"]] + fixef(agemix.M5)[["Participant.age"]]*(part-15) + 1.96 * sqrt(as.numeric(VarCorr(agemix.M5)[1])))
+
+
 
 ggplot(DT.Agemix.men,aes(Participant.age,Partner.age)) +
   geom_jitter(size=3,color="black", width = 0.25, height = 0.25, alpha = 0.5) +
   xlab("Participant's age") +
   ylab("Partner's age") + 
-  scale_x_continuous(labels = function(x)x+15, breaks = scales::pretty_breaks(n = 10)) +
+  scale_x_continuous(labels = function(x)x+15, breaks = scales::pretty_breaks(n = 10), expand = c(0,0)) +
   scale_y_continuous(breaks = scales::pretty_breaks(n = 10)) +
-  coord_fixed()+
+  coord_fixed()+ 
   theme(axis.text.x = element_text(size=12),
         axis.text.y = element_text(size=12)) +
   theme(text=element_text( size=12)) + 
   geom_abline(aes(intercept = fixef(agemix.M5)[["(Intercept)"]],slope = fixef(agemix.M5)[["Participant.age"]], color = "Population average"),
               size = 1.25) +
-  #geom_abline(aes(intercept = 15,slope =1,color = "Same age (x = y)"), size = 1.25) +
+  geom_abline(aes(intercept = 15,slope =1,color = "Same age (x = y)"), size = 1.25) +
   scale_colour_manual(name="Line Colour",
-                      values=c("Population average" = "orangered2", "Same age (x = y)" ="dodgerblue"))+
-  geom_line(data = confint, aes(x=participant.age-15, y=lci), linetype = "dashed", color="dodgerblue") +
-  geom_line(data = confint, aes(x=participant.age-15, y=uci), linetype = "dashed", color="dodgerblue") +
-  geom_segment(aes(x=15-15, y = uci.15, xend = 15-15,yend=lci.15, color = "participant age = 15"), color = "dodgerblue")+
-  geom_segment(aes(x=30-15, y = uci.30, xend = 30-15,yend=lci.30), color = "dodgerblue")+
-  geom_point(aes(x=15-15,y=fixef(agemix.M5)[["(Intercept)"]]), size=4, color = "dodgerblue")+
-  geom_point(aes(x=30-15,y=fixef(agemix.M5)[["(Intercept)"]]+fixef(agemix.M5)[["Participant.age"]]*15), size=4, color = "dodgerblue")
+                      values=c("Population average" = "orangered2", "Same age (x = y)" ="dodgerblue")) +
+  geom_line(data = confint, aes(x=participant.age-15, y=lci), size = 1,linetype = "dashed", color="orangered2") +
+  geom_line(data = confint, aes(x=participant.age-15, y=uci), size = 1,linetype = "dashed", color="orangered2") 
+  #geom_line(data = confint.between, aes(x=participant.age-15, y=lci.1), linetype = "dashed", color="#1B9E77") +
+  #geom_line(data = confint.between, aes(x=participant.age-15, y=uci.1), linetype = "dashed", color="#1B9E77") 
 
-ggsave("AgemixingCI.png", width = 6.25, height = 5.25,dpi = 600)
+
+ggsave("Agemixing.png", width = 6.25, height = 5.25,dpi = 600)
+summary(DT.Agemix.men)
