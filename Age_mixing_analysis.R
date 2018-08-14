@@ -241,8 +241,8 @@ anova(agemix.M2,agemix.M4)
 # DT.Agemix.men.new$varweight = 1/abs(DT.Agemix.men$Participant.age)^0.6198723 
 #
 #=====
-
-agemix.M5 <- lme(Partner.age~ Participant.age, 
+DT.Agemix.men$Participant.age2 <- DT.Agemix.men$Participant.age +15
+agemix.M5 <- lme(Partner.age~ Participant.age2, 
                                  data = DT.Agemix.men,method = "REML",
                                  weights = varPower(value = 0, # this starting point is the homoscedastic form
                                                     form = ~ Participant.age + 1),
