@@ -26,61 +26,7 @@ partlevels = c( "casual partner" = 3, "regular partner" = 2, "husband/wife" = 1,
 gender = c("male" = 1, "female" = 2)
 partnersex = c("male" = 1, "female" = 2, "DK" = 3, "REF" = 4)
 
-# # =========
-# # 5% subset
-# # =========
-# T1.Baseline <- read_excel("SAMPLE_T1_2017-05-02_00-59-36.xlsx")
-# 
-# names(T1.Baseline) <- make.names(names(T1.Baseline))
-# 
-# freqlevels = c("never" , "sometimes", "always" )
-# sexlevels = c("1", "between 2-5", "between 6-10","more than 10")
-# partlevels = c( "casual partner", "regular partner", "husband/wife")
-# gender = c("male" = "Male", "female" = "Female")
-# partnersex = c("male", "female")
-# 
-# T1.agemix <- T1.Baseline %>% transmute(Uid,
-#                                        Region,
-#                                        Gender = factor(REQsex, levels = gender, labels = names(gender)),
-#                                        Age = Age.REQ,
-#                                        No.partners = as.numeric(RQtnp6m),
-#                                        EnrollmentDate = as.POSIXct(REQ.Erdt),
-#                                        Start.rel.date.p1 = RQp1rbmy,
-#                                        End.rel.date.p1 = RQp1remy,
-#                                        Partner.age.p1 = as.numeric(RQp1ftyy),
-#                                        Partner.gender.p1 = factor(RQp1ps, levels = partnersex),
-#                                        Condom.freq.p1 = ordered(RQp1hocu,levels = freqlevels),
-#                                        Sex.freq.p1 = ordered(RQp1hm6s,levels = sexlevels),
-#                                        Partner.type.p1 = ordered(RQp1psr,levels = partlevels),
-#                                        Money.gifts.p1 = ordered(RQp1grm,levels = freqlevels),
-#                                        NO.2nd.partner = RQno2p,
-#                                        Start.rel.date.p2 = RQp2rbmy,
-#                                        End.rel.date.p2 = RQp2remy,
-#                                        Partner.age.p2 = as.numeric(RQp2ftyy),
-#                                        Partner.gender.p2 = factor(RQp2ps, levels = partnersex),
-#                                        Condom.freq.p2 = ordered(RQp2hocu,levels = freqlevels),
-#                                        Sex.freq.p2 = ordered(RQp2hm6s,levels = sexlevels),
-#                                        Partner.type.p2 = ordered(RQp2psr,levels = partlevels),
-#                                        Money.gifts.p2 = ordered(RQp2grm,levels = freqlevels),
-#                                        NO.3rd.partner = RQno3p,
-#                                        Start.rel.date.p3 = RQp3rbmy,
-#                                        End.rel.date.p3 = RQp3remy,
-#                                        Partner.age.p3 = as.numeric(RQp3ftyy),
-#                                        Partner.gender.p3 = factor(RQp3ps, levels = partnersex),
-#                                        Condom.freq.p3 = ordered(RQp3hocu,levels = freqlevels),
-#                                        Sex.freq.p3 = ordered(RQp3hm6s, levels = sexlevels),
-#                                        Money.gifts.p3 = ordered(RQp3grm, levels = freqlevels),
-#                                        Partner.type.p3 = ordered(RQp3psr, levels = partlevels)
-# )
-# 
-
-# ===============
-# Subset the data
-# ===============
-
-# Remove unwanted variables
-# Rename the variables
-# Set the data type for some of the variables
+# Subset Data
 
 T1.agemix <- T1.Baseline %>% transmute(Uid = uid,
                                        EnrollmentDate = dmy(REQ_erdt),
@@ -153,6 +99,12 @@ T1.agemix$Age.res.p3 <- AgeResAtRelOnset(currentage = T1.agemix$Age,
                                          currentdate = T1.agemix$EnrollmentDate,
                                          daterel = DateCleaning(T1.agemix$Start.rel.date.p3))
 
+
+# Remove if age at formation is bigger than current age
+
+T1.agemix <- filter(T1.agemix, Age.res.p1 <= Age | is.na(Age.res.p1)) %>% 
+  filter(Age.res.p2 <= Age | is.na(Age.res.p2)) %>% 
+  filter(Age.res.p3 <= Age | is.na(Age.res.p3)) 
 
 # create a variable for relationship duration [weeks]
 
@@ -308,23 +260,24 @@ sum(table(DT.Agemix.new$Uid) == 2)
 sum(table(DT.Agemix.new$Uid) == 3)
 
 # tidy dataset
-# Remove all data from respondents younger than 15 years old
-# Subtract 15 from all respondent ages, so that a respondent.age.at.relationship.formation” is
-# coded 0 for a man who started a relationship at age 15 years old.
+# Remove all data from respondents who were less than 12 years old when they formed a relationship
+# Subtract 12 from all respondent ages, so that a respondent.age.at.relationship.formation” is
+# coded 0 for a man who started a relationship at age 12 years old.
 
 DT.Agemix.men <- DT.Agemix.new %>% 
-  filter(Participant.age >= 15) %>% #removes na's in participant age
-  mutate(Participant.age = Participant.age - 15) %>% 
+  filter(Participant.age >= 12) %>% #removes na's in participant age
+  mutate(Participant.age = Participant.age - 12) %>% 
   filter(Partner.gender == "female") # remove same sex relationships
-  
-sum(table(DT.Agemix.men$Uid) == 1)
-sum(table(DT.Agemix.men$Uid) == 2)
-sum(table(DT.Agemix.men$Uid) == 3)
-summary(DT.Agemix.men)    
 
+# Not removing relationships where age of participant at rel formation was <15  
+DT.Agemix.men.2 <- DT.Agemix.new %>% 
+  mutate(Participant.age = Participant.age - 12) %>% 
+  filter(Partner.gender == "female") # remove same sex relationships
+
+summary(DT.Agemix.men)
 # ============================
 # Save the data as an R object
 # ============================
-save(T1.Baseline, file = "/Users/emanuel/Google Drive/SHIMS/SHIMS Baseline data/T1.Baseline.Rdata")
+save(DT.Agemix.men.2, file = "/Users/emanuel/Google Drive/SHIMS/SHIMS Baseline data/DT.Agemix.men.2.Rdata")
 save(DT.Agemix.men, file = "/Users/emanuel/Google Drive/SHIMS/SHIMS Baseline data/DT.Agemix.men.Rdata")
 

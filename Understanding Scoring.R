@@ -11,8 +11,7 @@ Threshold2 <- condom.M1$alpha[2]
 
 mmvar.beta <- mmvar * M1.beta
 transformed <- plogis(mmvar.beta - Threshold1) + plogis(mmvar.beta - Threshold2)
-transformed.mine <- (1 - plogis(Threshold1 - mmvar.beta))+ (1-plogis(Threshold2 - mmvar.beta))
-plot(mmvar.beta)
+
 # tidycond.1b$fit == transformed
 
 # Scoring Trial 2
