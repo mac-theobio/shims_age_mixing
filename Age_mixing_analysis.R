@@ -105,9 +105,9 @@ ggplot(data = DT.Agemix.men, aes(Participant.age + 12)) +
   geom_histogram(bins = 30) +
   xlab("Participant's age") +
   ylab("Relationships") +
-  theme(axis.text.x = element_text(size=15), panel.grid.minor = element_blank(),
-        axis.text.y = element_text(size=15)) +
-  theme(text=element_text( size=15)) + 
+  theme(axis.text.x = element_text(size=19), panel.grid.minor = element_blank(),
+        axis.text.y = element_text(size=19)) +
+  theme(text=element_text( size=19)) + 
   scale_x_continuous(breaks = scales::pretty_breaks(n = 10), limits = c(10,50)) + 
   scale_y_continuous(breaks = c(0,200,400,600,800), limits = c(0,600))
 
@@ -117,9 +117,9 @@ ggplot(data = DT.Agemix.men, aes(Partner.age)) +
   geom_histogram(bins = 30, na.rm = T) +
   xlab("Partner's age") +
   ylab("Relationships") +
-  theme(axis.text.x = element_text(size=15), panel.grid.minor = element_blank(),
-        axis.text.y = element_text(size=15)) +
-  theme(text=element_text( size=15)) +
+  theme(axis.text.x = element_text(size=19), panel.grid.minor = element_blank(),
+        axis.text.y = element_text(size=19)) +
+  theme(text=element_text( size=19)) +
   scale_x_continuous(breaks = scales::pretty_breaks(n = 10), limits = c(10,40)) + 
   scale_y_continuous(breaks = scales::pretty_breaks(n = 5.5))
 
@@ -241,9 +241,9 @@ ggplot(heteroscedastic, aes(fitted.M2, residuals.M2)) +
   geom_hline(yintercept = 0) +
   xlab("Fitted Values") +
   ylab("Residuals") +
-  theme(axis.text.x = element_text(size=12),
-        axis.text.y = element_text(size=12)) +
-  theme(text=element_text( size=12)) 
+  theme(axis.text.x = element_text(size=13),
+        axis.text.y = element_text(size=13)) +
+  theme(text=element_text( size=13)) 
   
 ggsave("detecthetero.png", width = 6.25, height = 5.25,dpi = 600)
 
@@ -255,11 +255,11 @@ ggplot(heteroscedastic, aes(Participant.age, residuals.M2)) +
   xlab("Participant age") +
   ylab("Residuals") +
   scale_x_continuous(labels = function(x)x+12, breaks = scales::pretty_breaks(n = 10), limits = c(0,38)) +
-  scale_y_continuous(breaks = scales::pretty_breaks(n = 10)) +
+  #scale_y_continuous(breaks = scales::pretty_breaks(n = 10)) +
   coord_fixed()+
-  theme(axis.text.x = element_text(size=12), panel.grid.minor = element_blank(),
-        axis.text.y = element_text(size=12)) +
-  theme(text=element_text( size=12))  
+  theme(axis.text.x = element_text(size=13), panel.grid.minor = element_blank(),
+        axis.text.y = element_text(size=13)) +
+  theme(text=element_text( size=13))  
 
 ggsave("detecthetero1.png", width = 6.25, height = 5.25,dpi = 600)
 
@@ -373,9 +373,9 @@ Agemix.plot <- ggplot(DT.Agemix.men,aes(Participant.age,Partner.age)) +
   scale_x_continuous(labels = function(x)x+12, breaks = seq(-2,50, by=5), expand = c(0,0), limits = c(0,40)) +
   scale_y_continuous(breaks = scales::pretty_breaks(n = 10),expand = c(0,0), limits = c(0,40)) +
   coord_fixed()+ 
-  theme(axis.text.x = element_text(size=12),panel.grid.minor = element_blank(),
-        axis.text.y = element_text(size=12)) +
-  theme(text=element_text( size=12)) + 
+  theme(axis.text.x = element_text(size=11),panel.grid.minor = element_blank(),
+        axis.text.y = element_text(size=11)) +
+  theme(text=element_text( size=11)) + 
   geom_abline(aes(intercept = fixef(agemix.M5)[["(Intercept)"]],slope = fixef(agemix.M5)[["Participant.age"]],color = "Population average"), size = 1.25) +
   geom_abline(aes(intercept = 12,slope =1, color = "Same age"), size = 1.25) +
   geom_line(data = confint, aes(x=participant.age-12, y=lci), size = 1,linetype = "dashed", color="orangered2") +
