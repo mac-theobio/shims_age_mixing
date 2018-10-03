@@ -106,20 +106,6 @@ T1.agemix <- filter(T1.agemix, Age.res.p1 <= Age | is.na(Age.res.p1)) %>%
   filter(Age.res.p2 <= Age | is.na(Age.res.p2)) %>% 
   filter(Age.res.p3 <= Age | is.na(Age.res.p3)) 
 
-# create a variable for relationship duration [weeks]
-
-# T1.agemix$Rel.dur.p1 <- as.numeric(difftime(DateCleaning(T1.agemix$End.rel.date.p1), 
-#                                  DateCleaning(T1.agemix$Start.rel.date.p1),
-#                                  units = "weeks"))
-# 
-# T1.agemix$Rel.dur.p2 <- as.numeric(difftime(DateCleaning(T1.agemix$End.rel.date.p2), 
-#                                  DateCleaning(T1.agemix$Start.rel.date.p2),
-#                                  units = "weeks"))
-# 
-# T1.agemix$Rel.dur.p3 <- as.numeric(difftime(DateCleaning(T1.agemix$End.rel.date.p3), 
-#                                  DateCleaning(T1.agemix$Start.rel.date.p3),
-#                                  units = "weeks"))
-
 # Relationship duration in months
 
 T1.agemix$Rel.dur.p1 <- (as.yearmon(T1.agemix$End.rel.date.p1,"%b%y") - as.yearmon(T1.agemix$Start.rel.date.p1,"%b%y"))*12
