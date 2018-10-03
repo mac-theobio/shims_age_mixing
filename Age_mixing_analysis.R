@@ -384,7 +384,7 @@ Agemix.plot <- ggplot(DT.Agemix.men,aes(Participant.age,Partner.age)) +
                       values=c("Population average" = "orangered2", "Same age" ="dodgerblue")) 
 
 Agemix.plot
-ggsave("Agemixing.png", width = 6.25, height = 5.25,dpi = 600)
+ggsave("Agemixing.png", width = 9.25, height = 5.25,dpi = 600)
 
 
 ######

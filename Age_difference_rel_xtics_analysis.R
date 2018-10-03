@@ -27,7 +27,13 @@ mycols1 <- c("#D80491", "#1B9E77","orangered2","dodgerblue")
 source("Functions_for_SHIMS_study.R")
 
 summary(DT.Agemix.men)
-filter(DT.Agemix.men, Age.difference >= 10)
+
+# total number of men
+length(unique(DT.Agemix.men$Uid))
+length(unique(filter(DT.Agemix.men, Age.difference >= 10)$Uid))/ length(unique(DT.Agemix.men$Uid)) # age gap >=10
+length(unique(filter(DT.Agemix.men, Age.difference < 0)$Uid))/ length(unique(DT.Agemix.men$Uid)) # age gap <0
+
+
 
 t.test(DT.Agemix.men$Age.difference) #CI
 # ordering levels
@@ -1864,7 +1870,7 @@ reldur.1 <- Predicted.survivor %>%
   scale_color_manual(name = "Partner type", values = c("dodgerblue","orangered","#1B9E77"),
                      labels = c("Casual","Spouse","Regular")) +
   scale_linetype_manual(name = "Age difference",
-                        values = c("solid","dashed","twodash","longdash", "dotted"),
+                        values = c("solid","dashed","dotted","longdash", "dotdash"),
                         labels = c("4yrs younger", 
                                     "1yr older", 
                                     "4yrs older",
@@ -1874,12 +1880,13 @@ reldur.1 <- Predicted.survivor %>%
   ylab("Probability of survival") +
   theme(axis.text.x = element_text(size=19),
         axis.text.y = element_text(size=19))+
-  theme(text=element_text(size=19))
+  theme(text=element_text(size=19),
+        legend.key.width = unit(4,"line"))
 reldur.1
 
 cox.leg.M1 <- get_legend(reldur.1)
 ggplotify::as.ggplot(cox.leg.M1)
-ggsave("coxlegM1.png", width = 1.39, height = 4.35,dpi = 600)
+ggsave("coxlegM1.png", width = 2.19, height = 4.35,dpi = 600)
 
 
 reldur.1 + theme(legend.position = "none")
@@ -2007,7 +2014,7 @@ reldur.2 <- Predicted.survivor.2 %>%
   scale_color_manual(name = "Partner type", values = c("dodgerblue","orangered","#1B9E77"),
                      labels = c("Casual","Spouse","Regular")) +
   scale_linetype_manual(name = "Age difference",
-                        values = c("solid","dashed","twodash","longdash", "dotted"),
+                        values = c("solid","dashed","dotted","longdash", "dotdash"),
                         labels = c("4yrs younger", 
                                    "1yr older", 
                                    "4yrs older",
@@ -2017,7 +2024,8 @@ reldur.2 <- Predicted.survivor.2 %>%
   ylab("Probability of survival") +
   theme(axis.text.x = element_text(size=19),
         axis.text.y = element_text(size=19))+
-  theme(text=element_text(size=19))
+  theme(text=element_text(size=19),
+        legend.key.width = unit(4,"line"))
 reldur.2
 
 reldur.2 + theme(legend.position = "none")
