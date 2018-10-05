@@ -16,19 +16,24 @@ library(gtable) # format the extracted legends
 #load("~/Documents/shims_age_mixing/DT.Agemix.men.5.Rdata")
 
 load("/Users/emanuel/Google Drive/SHIMS/SHIMS Baseline data/DT.Agemix.men.Rdata")
-load("/Users/emanuel/Google Drive/SHIMS/SHIMS Baseline data/DT.Agemix.men.2.Rdata")
+#load("/Users/emanuel/Google Drive/SHIMS/SHIMS Baseline data/DT.Agemix.men.2.Rdata")
 theme_set(theme_bw()) # set global plot theme
 
 # number of male participants
 length(table(DT.Agemix.men$Uid))
+partlevels = c("casual partner","regular partner","husband/wife")
 # =========================
 # Subset and Exploratory data analysis
 # =========================
-DT.Agemix.men <- select(DT.Agemix.men,
-                        "Uid",
-                        "Participant.age",
-                        "Age.difference",
-                        "Partner.age") %>% drop_na(c(Partner.age,Participant.age))
+
+DT.Agemix.men <- transmute(DT.Agemix.men,
+                          Uid,
+                          Participant.age,
+                          Age.difference,
+                          Partner.age,
+                          Partner.type = ordered(Partner.type, levels = partlevels, 
+                                                 labels =c("casual partner","regular partner", "spouse"))) %>% 
+  drop_na(c(Partner.age,Participant.age,Partner.type))
 
 summary(DT.Agemix.men)
 # men who reported 1,2,3 partner
@@ -50,27 +55,43 @@ L = quantile(DT.Agemix.men$Partner.age, probs = 0.25) - H
 DT.Agemix.men <- filter(DT.Agemix.men, Partner.age >= L & Partner.age <= U)
 
 
-# For dataset which we didnt discard relationships where the man was younger than 15 years
-DT.Agemix.men.2 <- select(DT.Agemix.men.2,
-                        "Uid",
-                        "Participant.age",
-                        "Age.difference",
-                        "Partner.age") %>%  drop_na(c(Partner.age,Participant.age))
-
-HH = 3*IQR(DT.Agemix.men.2$Partner.age)
-UU = quantile(DT.Agemix.men.2$Partner.age, probs = 0.75) + HH
-LL = quantile(DT.Agemix.men.2$Partner.age, probs = 0.25) - HH
-
-DT.Agemix.men.2 <- filter(DT.Agemix.men.2, Partner.age >= LL & Partner.age <= UU)
-DT.Agemix.men.2 <- filter(DT.Agemix.men.2, Participant.age > -9)
-DT.Agemix.men.2$Participant.age.more.15 <- as.factor(ifelse(DT.Agemix.men.2$Participant.age > 0, 1, 0))
-
+# For dataset which we didnt discard relationships where the man was younger than 12 years
+# DT.Agemix.men.2 <- select(DT.Agemix.men.2,
+#                         "Uid",
+#                         "Participant.age",
+#                         "Age.difference",
+#                         "Partner.age") %>%  drop_na(c(Partner.age,Participant.age))
+# 
+# HH = 3*IQR(DT.Agemix.men.2$Partner.age)
+# UU = quantile(DT.Agemix.men.2$Partner.age, probs = 0.75) + HH
+# LL = quantile(DT.Agemix.men.2$Partner.age, probs = 0.25) - HH
+# 
+# DT.Agemix.men.2 <- filter(DT.Agemix.men.2, Partner.age >= LL & Partner.age <= UU)
+# DT.Agemix.men.2 <- filter(DT.Agemix.men.2, Participant.age > -9)
+# DT.Agemix.men.2$Participant.age.more.15 <- as.factor(ifelse(DT.Agemix.men.2$Participant.age > 0, 1, 0))
 
 ggplot(DT.Agemix.men,aes(Participant.age,Partner.age)) +
-  geom_jitter(size=3,color="black", width = 0.25, height = 0.25, alpha = 0.5) +
-  xlab("Age") +
-  ylab("Partner age") +
-  scale_x_continuous(labels = function(x)x+12, breaks = scales::pretty_breaks(n = 10)) 
+  geom_jitter(aes(color = Partner.type), size=3, width = 0.25, height = 0.25, alpha = 0.5) +
+  xlab("Participant's age at relationship formation") +
+  ylab("Partner's age at relationship formation") + 
+  scale_x_continuous(labels = function(x)x+12, breaks = seq(-2,50, by=5)) +
+  scale_y_continuous(breaks = scales::pretty_breaks(n = 10))+
+  coord_fixed()
+
+# ggsave("rawdata.png", width = 6.25, height = 5.25,dpi = 600)
+
+# Alternatively
+ggplot(DT.Agemix.men,aes(Participant.age,Partner.age)) +
+  geom_jitter(size=2, width = 0.25, height = 0.25, alpha = 0.25) +
+  xlab("Participant's age at relationship formation") +
+  ylab("Partner's age at relationship formation") + 
+  scale_x_continuous(labels = function(x)x+12, breaks = seq(-2,50, by=5)) +
+  scale_y_continuous(breaks = scales::pretty_breaks(n = 10)) +
+  coord_fixed() + 
+  theme(panel.grid.minor = element_blank())+
+  facet_grid(~ Partner.type)
+
+# ggsave("rawdata_facet.png", width = 8.25, height = 3.25,dpi = 600)
 
 # transforming the data to see if we can rectify the spread
 
@@ -364,7 +385,7 @@ Agemix.plot2 <- ggplot(DT.Agemix.men.2,aes(Participant.age,Partner.age)) +
   geom_jitter(aes(color = Participant.age.more.15),size=3, width = 0.25, height = 0.25, alpha = 0.5, show.legend = T) +
   xlab("Participant's age at relationship formation") +
   ylab("Partner's age at relationship formation") + 
-  scale_x_continuous(labels = function(x)x+15, breaks = scales::pretty_breaks(n = 10), expand = c(0,0),limits = c(-15,35)) +
+  scale_x_continuous(labels = function(x)x+12, breaks = scales::pretty_breaks(n = 10), expand = c(0,0),limits = c(-15,35)) +
   scale_y_continuous(breaks = scales::pretty_breaks(n = 10),expand = c(0,0), limits = c(0,40)) +
   coord_fixed()+ 
   theme(axis.text.x = element_text(size=12),panel.grid.minor = element_blank(),
