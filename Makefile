@@ -1,22 +1,31 @@
 # shims_age_mixing
 ### Hooks for the editor to set the default target
+
 current: target
-
-target pngtarget pdftarget vtarget acrtarget gptarget: prev_partner_hist.Rout 
-
-##################################################################
-
-# make files
-
-Sources = Makefile .gitignore README.md stuff.mk LICENSE.md
-include stuff.mk
-# include $(ms)/perl.def
+-include target.mk
 
 ##################################################################
+
+# stuff
+
+Sources = Makefile README.md LICENSE.md
+Ignore += .gitignore
+
+ms = makestuff
+-include $(ms)/os.mk
+
+# -include $(ms)/perl.def
+
+msrepo = https://github.com/dushoff
+Ignore += $(ms)
+Makefile: $(ms) $(ms)/Makefile
+$(ms):
+	git clone $(msrepo)/$(ms)
+
+######################################################################
 
 ## Content
 
-Sources += $(wildcard *.xlsx)
 Sources += $(wildcard *.R)
 
 ### Emanuel's code (print statements added)
@@ -58,18 +67,10 @@ prev_samp.Rout: prev_samp.csv SAMPLE_PREVALENCE_2017-03-18_05-08-09.xlsx readsam
 
 ######################################################################
 
-wpush:
-	$(MAKE) sync
-	git add -f *.wrapR.r
-	git commit -m "Pushing wrapR files"
-	git push
-
-######################################################################
-
 ### Makestuff
 
 -include $(ms)/git.mk
 -include $(ms)/visual.mk
 
--include $(ms)/wrapR.mk
-# -include $(ms)/oldlatex.mk
+# -include $(ms)/wrapR.mk
+
