@@ -8,7 +8,7 @@ current: target
 
 # stuff
 
-Sources = Makefile README.md LICENSE.md
+Sources = Makefile README.md LICENSE.md .ignore
 Ignore += .gitignore
 
 ms = makestuff
