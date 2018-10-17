@@ -8,7 +8,7 @@ current: target
 
 # stuff
 
-Sources = Makefile README.md LICENSE.md .ignore
+Sources = Makefile README.md LICENSE.md .ignore notes.txt
 Ignore += .gitignore
 
 ms = makestuff
@@ -32,7 +32,6 @@ Sources += $(wildcard *.R)
 
 shims1.Routput: 
 shims1.Rout: shims1.R
-
 
 ### Reading and checking the data
 
