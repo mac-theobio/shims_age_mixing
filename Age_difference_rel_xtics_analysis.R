@@ -16,7 +16,7 @@ library(mgcv)         #for fitting GAMs
 library(lubridate)
 library(survminer)
 
-## load data and functions
+# load data and functions
 
 #load("~/Documents/shims_age_mixing/DT.Agemix.men.5.Rdata") # 5% random sample
 load("/Users/emanuel/Google Drive/SHIMS/SHIMS Baseline data/DT.Agemix.men.Rdata") # full dataset
@@ -27,12 +27,34 @@ source("Functions_for_SHIMS_study.R")
 
 summary(DT.Agemix.men)
 
+# age differences and relationships
+
+x <- filter(DT.Agemix.men, Age.difference < 0)
+xx <- filter(DT.Agemix.men, Age.difference >= 0)
+
+xx1 <- filter(DT.Agemix.men, Age.difference < -5)
+xx2 <- filter(DT.Agemix.men, Age.difference >= -5 & Age.difference < 0)
+xx3 <- filter(DT.Agemix.men, Age.difference >= 0 & Age.difference < 5)
+xx4 <- filter(DT.Agemix.men, Age.difference >= 5 & Age.difference < 10)
+xx5 <- filter(DT.Agemix.men, Age.difference >= 10)
+              
+
+(nrow(xx1)/5216) * 100
+(nrow(xx2)/5216) * 100
+(nrow(xx3)/5216) * 100
+(nrow(xx4)/5216) * 100
+(nrow(xx5)/5216) * 100
+
 # total number of men
 length(unique(DT.Agemix.men$Uid))
-length(unique(filter(DT.Agemix.men, Age.difference >= 10)$Uid))/ length(unique(DT.Agemix.men$Uid)) # age gap >=10
+
 length(unique(filter(DT.Agemix.men, Age.difference < 0)$Uid))/ length(unique(DT.Agemix.men$Uid)) # age gap <0
 
-
+length(unique(filter(DT.Agemix.men, Age.difference < -5)$Uid))/ length(unique(DT.Agemix.men$Uid)) # age gap <0
+length(unique(filter(DT.Agemix.men, Age.difference >= -5 & Age.difference < 0)$Uid))/ length(unique(DT.Agemix.men$Uid)) # age gap <0
+length(unique(filter(DT.Agemix.men, Age.difference >= 0 & Age.difference < 5)$Uid))/ length(unique(DT.Agemix.men$Uid)) # age gap <0
+length(unique(filter(DT.Agemix.men, Age.difference >= 5 & Age.difference < 10)$Uid))/ length(unique(DT.Agemix.men$Uid)) # age gap <0
+length(unique(filter(DT.Agemix.men, Age.difference >= 10)$Uid))/ length(unique(DT.Agemix.men$Uid)) # age gap >=10
 
 t.test(DT.Agemix.men$Age.difference) #CI
 # ordering levels
@@ -85,7 +107,7 @@ ggplot(data = DT.reldata.men, aes(Age.difference)) +
   scale_x_continuous(breaks = scales::pretty_breaks(n = 10)) +
   scale_y_continuous(breaks = scales::pretty_breaks(n = 5.5))
 
-ggsave("Agediffhist.png", width = 6.25, height = 5.25,dpi = 600)
+# ggsave("Agediffhist.png", width = 6.25, height = 5.25,dpi = 600)
 
 # frequncies of the condom use levels
 
@@ -336,7 +358,10 @@ Effects.condom.M3a.line.plot <- ggplot(Effects.condom.M3a, aes(x = Age.differenc
                                         scale_color_manual(name = "Condom use", 
                                                            values = c(mycols))
 
-Effects.condom.M3a.line.plot + theme(legend.position = "none")
+Rug.plot.condom <- geom_rug(data = DT.reldata.men, aes(x= Age.difference),
+                            inherit.aes = FALSE, sides = "b", alpha = 0.05)
+
+Effects.condom.M3a.line.plot + theme(legend.position = "none") + Rug.plot.condom
 # ggsave("CondomuselineM3a.png", width = 5.25, height = 4.25,dpi = 600)
 
 # Predicted effects and plot
@@ -354,7 +379,7 @@ Predictions.condom.M3a.plot <- Predictions.condom.M3a %>%
         axis.text.y = element_text(size=19)) +
   theme(text=element_text( size=19)) 
 
-Predictions.condom.M3a.plot 
+Predictions.condom.M3a.plot + Rug.plot.condom
 # ggsave("Condompred3a.png", width = 5.25, height = 4.25,dpi = 600)
 
 # (ii) Age of participant effect
@@ -381,8 +406,10 @@ Effects.condom.M3b.line.plot <- ggplot(Effects.condom.M3b, aes(x = Participant.a
                                                            values = c(mycols)) +
                                         xlim(10,50)
   
+Rug.plot.condom.2 <- geom_rug(data = DT.reldata.men, aes(x= Participant.age),
+                            inherit.aes = FALSE, sides = "b", alpha = 0.05)
 
-Effects.condom.M3b.line.plot + theme(legend.position = "none")
+Effects.condom.M3b.line.plot + theme(legend.position = "none") + Rug.plot.condom.2
 # ggsave("CondomuselineM3b.png", width = 5.25, height = 4.35,dpi = 600)
 
 
@@ -403,8 +430,8 @@ Predictions.condom.M3b.plot <- Predictions.condom.M3b %>%
   xlim(10,50)
   #+scale_x_continuous(breaks = scales::pretty_breaks(n = 10)) 
 
-Predictions.condom.M3b.plot
-ggsave("Condompred3b.png", width = 5.25, height = 4.25,dpi = 600)
+Predictions.condom.M3b.plot + Rug.plot.condom.2
+# ggsave("Condompred3b.png", width = 5.25, height = 4.25,dpi = 600)
 
 
 ##### number of partners
@@ -433,7 +460,10 @@ Effects.condom.M3c.line.plot <- ggplot(Effects.condom.M3c, aes(x = No.partners, 
                      values = c(mycols)) +
   xlim(0,20)
 
-Effects.condom.M3c.line.plot + theme(legend.position = "none")
+Rug.plot.condom.3 <- geom_rug(data = DT.reldata.men, aes(x= No.partners),
+                              inherit.aes = FALSE, sides = "b", alpha = 0.05)
+
+Effects.condom.M3c.line.plot + theme(legend.position = "none") + Rug.plot.condom.3
 # ggsave("CondomuselineM3c.png", width = 5.25, height = 4.25,dpi = 600)
 
 # Predicted effects and plot
@@ -452,8 +482,8 @@ Predictions.condom.M3c.plot <- Predictions.condom.M3c %>%
   theme(text=element_text( size=19)) +
   xlim(0,20)
 
-Predictions.condom.M3c.plot
-ggsave("Condompred3c.png", width = 5.25, height = 4.25,dpi = 600)
+Predictions.condom.M3c.plot + Rug.plot.condom.3
+# ggsave("Condompred3c.png", width = 5.25, height = 4.25,dpi = 600)
 
 # ** Participant age on condom use Univariate ----------------------------------------------
 
@@ -492,9 +522,10 @@ ggplot(Effects.condom.M4, aes(x = Participant.age, y=prob, col = cond)) +
         legend.position = "bottom") +
   scale_color_manual(name = "Condom use", 
                      values = c(mycols)) +
-  xlim(10,50)
+  xlim(10,50) +
+  Rug.plot.condom.2
 
-ggsave("CondomusetrialM4.png", width = 5.25, height = 4.35,dpi = 600)
+# ggsave("CondomusetrialM4.png", width = 5.25, height = 4.35,dpi = 600)
 
 # Sex Frequency Analysis -----------------------------------------------------
 # ** Subset and Exploratory data analysis -----------------------------------
@@ -768,7 +799,10 @@ Effects.sex.M3.line.plot <- ggplot(Effects.sex.M3a, aes(x = Age.difference, y=pr
   scale_color_manual(name = "Sex frequency", 
                      values = c(mycols))
 
-Effects.sex.M3.line.plot + theme(legend.position = "none")
+Rug.plot.sex <- geom_rug(data = DT.sexdata.men, aes(x= Age.difference),
+                            inherit.aes = FALSE, sides = "b", alpha = 0.05)
+
+Effects.sex.M3.line.plot + theme(legend.position = "none") + Rug.plot.sex
 # ggsave("SexfreqM3.png", width = 5.25, height = 4.25,dpi = 600)
 
 # Predicted effects on sex frequency
@@ -787,7 +821,7 @@ Predictions.sex.M3a.plot <- Predictions.sex.M3a %>%
         axis.text.y = element_text(size=19)) +
   theme(text=element_text( size=19)) 
 
-Predictions.sex.M3a.plot
+Predictions.sex.M3a.plot + Rug.plot.sex
 # ggsave("Sexpred3a.png", width = 5.25, height = 4.35,dpi = 600)
 
 # (ii) Participant age effect
@@ -818,8 +852,10 @@ Effects.sex.M3b.line.plot <- ggplot(Effects.sex.M3b, aes(x = Participant.age, y=
                      values = c(mycols)) +
   xlim(10,50)
 
+Rug.plot.sex.2 <- geom_rug(data = DT.sexdata.men, aes(x= Participant.age),
+                            inherit.aes = FALSE, sides = "b", alpha = 0.05)
 
-Effects.sex.M3b.line.plot + theme(legend.position = "none")
+Effects.sex.M3b.line.plot + theme(legend.position = "none") + Rug.plot.sex.2
 # ggsave("SexfreqlineM3b.png", width = 5.25, height = 4.35,dpi = 600)
 
 
@@ -840,7 +876,7 @@ Predictions.sex.M3b.plot <- Predictions.sex.M3b %>%
   xlim(10,50)
   #scale_x_continuous(breaks = scales::pretty_breaks(n = 10)) 
 
-Predictions.sex.M3b.plot
+Predictions.sex.M3b.plot + Rug.plot.sex.2
 # ggsave("Sexpred3b.png", width = 5.25, height = 4.35,dpi = 600)
 
 # (iii) Number of partners effect
@@ -871,7 +907,10 @@ Effects.sex.M3c.line.plot <- ggplot(Effects.sex.M3c, aes(x = No.partners, y=prob
                      values = c(mycols)) +
   xlim(0,20)
 
-Effects.sex.M3c.line.plot + theme(legend.position = "none")
+Rug.plot.sex.3 <- geom_rug(data = DT.sexdata.men, aes(x= No.partners),
+                           inherit.aes = FALSE, sides = "b", alpha = 0.05)
+
+Effects.sex.M3c.line.plot + theme(legend.position = "none") + Rug.plot.sex.3
 # ggsave("SexfreqlineM3c.png", width = 5.25, height = 4.35,dpi = 600)
 
 Predictions.sex.M3c <- OrdPred(sex.M3, "No.partners",DT.sexdata.men)
@@ -889,9 +928,9 @@ Predictions.sex.M3c.plot <- Predictions.sex.M3c %>%
   theme(text=element_text( size=19)) +
   xlim(0,20)
 
-Predictions.sex.M3c.plot
+Predictions.sex.M3c.plot + Rug.plot.sex.3
 
-ggsave("Sexpred3c.png", width = 5.25, height = 4.35,dpi = 600)
+# ggsave("Sexpred3c.png", width = 5.25, height = 4.35,dpi = 600)
 
 
 # ** Participant age on Sex frequency Univariate ----------------------------------------------
@@ -929,7 +968,7 @@ Effects.sex.M4.line.plot <- ggplot(Effects.sex.M4, aes(x = Participant.age, y=pr
   xlim(10,50)
 
 
-Effects.sex.M4.line.plot + theme(legend.position = "none")
+Effects.sex.M4.line.plot + theme(legend.position = "none") + Rug.plot.sex.2
 # ggsave("SexfreqlineM4.png", width = 5.25, height = 4.35,dpi = 600)
 
 
@@ -947,9 +986,9 @@ Predictions.sex.M4b.plot <- Predictions.sex.M4b %>%
   theme(axis.text.x = element_text(size=15),
         axis.text.y = element_text(size=15)) +
   theme(text=element_text( size=15)) +
-  xlim(15,50)
+  xlim(12,50)
 
-Predictions.sex.M4b.plot
+Predictions.sex.M4b.plot + Rug.plot.sex.2
 # ggsave("Sexpred4b.png", width = 5.25, height = 4.35,dpi = 600)
 
 # Partner Type Analysis -----------------------------------------------------
@@ -1202,7 +1241,10 @@ Effects.partner.M3a.line.plot <- ggplot(Effects.partner.M3a, aes(x = Age.differe
   scale_color_manual(name = "Partner type", 
                      values = c(mycols))
 
-Effects.partner.M3a.line.plot + theme(legend.position = "none")
+Rug.plot.part <- geom_rug(data = DT.partnerdata.men, aes(x= Age.difference),
+                         inherit.aes = FALSE, sides = "b", alpha = 0.05)
+
+Effects.partner.M3a.line.plot + theme(legend.position = "none") + Rug.plot.part
 # ggsave("PartnertypeM3a.png", width = 5.25, height = 4.25,dpi = 600)
 
 # Predicted effects and plot
@@ -1222,7 +1264,7 @@ Predictions.partner.M3a.plot <- Predictions.partner.M3a %>%
   theme(text=element_text( size=19)) 
 
 
-Predictions.partner.M3a.plot 
+Predictions.partner.M3a.plot + Rug.plot.part
 # ggsave("Partnerpred3a.png", width = 5.25, height = 4.25,dpi = 600)
 
 
@@ -1253,7 +1295,10 @@ Effects.partner.M3b.line.plot <- ggplot(Effects.partner.M3b, aes(x = Participant
                      values = c(mycols))+
   xlim(10,50)
 
-Effects.partner.M3b.line.plot + theme(legend.position = "none")
+Rug.plot.part.2 <- geom_rug(data = DT.partnerdata.men, aes(x= Participant.age),
+                          inherit.aes = FALSE, sides = "b", alpha = 0.05)
+
+Effects.partner.M3b.line.plot + theme(legend.position = "none") + Rug.plot.part.2
 # ggsave("PartnertypeM3b.png", width = 5.25, height = 4.25,dpi = 600)
 
 # Predicted effects and plot
@@ -1273,7 +1318,7 @@ Predictions.partner.M3b.plot <- Predictions.partner.M3b %>%
   #scale_x_continuous(breaks = scales::pretty_breaks(n = 10)) +
   xlim(10,50)
 
-Predictions.partner.M3b.plot
+Predictions.partner.M3b.plot + Rug.plot.part.2
 # ggsave("Partnerpred3b.png", width = 5.25, height = 4.25,dpi = 600)
 
 
@@ -1303,7 +1348,10 @@ Effects.partner.M3c.line.plot <- ggplot(Effects.partner.M3c, aes(x = No.partners
   scale_color_manual(name = "Partner type", 
                      values = c(mycols))
 
-Effects.partner.M3c.line.plot + theme(legend.position = "none")
+Rug.plot.part.3 <- geom_rug(data = DT.partnerdata.men, aes(x= No.partners),
+                          inherit.aes = FALSE, sides = "b", alpha = 0.05)
+
+Effects.partner.M3c.line.plot + theme(legend.position = "none") + Rug.plot.part.3
 # ggsave("PartnertypeM3c.png", width = 5.25, height = 4.25,dpi = 600)
 
 # Predicted effects and plot
@@ -1322,7 +1370,7 @@ Predictions.partner.M3c.plot <- Predictions.partner.M3c %>%
   theme(text=element_text( size=19)) +
   scale_x_continuous(breaks = scales::pretty_breaks(n = 10)) 
 
-Predictions.partner.M3c.plot
+Predictions.partner.M3c.plot + Rug.plot.part.3
 # ggsave("Partnerpred3c.png", width = 5.25, height = 4.25,dpi = 600)
 
 # Relationship duration analysis ------------------------------------------
@@ -1395,7 +1443,6 @@ KM.estimator.2
 KM.estimator.3 <- survfit(SurvObj ~ Partner.type, data = DT.coxdata.men, conf.type = "log-log")
 KM.estimator.3
 summary(KM.estimator.3)
-plot(KM.estimator.3)
 ggsurvplot(KM.estimator.3, size = 1.25, palette = c("dodgerblue","orangered","#1B9E77"),
            ggtheme = theme_bw(), pval = T, xlab = "Time (months)",
            legend.labs = c("Casual", "Regular", "Spouse"), 
@@ -1510,9 +1557,13 @@ rel.pred.1 <- tidyreldur.1 %>%
         axis.text.y = element_text(size=19))+
   theme(text=element_text(size=19)) 
 
-rel.pred.1
 
-ggsave("relcox1.png", width = 5.25, height = 4.35,dpi = 600)
+Rug.plot.Rel <- geom_rug(data = DT.coxdata.men, aes(x= Age.difference),
+                          inherit.aes = FALSE, sides = "b", alpha = 0.05)
+
+rel.pred.1 + Rug.plot.Rel
+
+# ggsave("relcox1.png", width = 5.25, height = 4.35,dpi = 600)
 # The hazard of ending a rationship was higher for participants who were 4.5 years older or more than their partners relative to the participants who had mean age difference.
 
 
@@ -1604,7 +1655,7 @@ rel.pred.2 <- tidyreldur.2 %>%
         axis.text.y = element_text(size=19))+
   theme(text=element_text(size=19)) 
 
-rel.pred.2
+rel.pred.2 + Rug.plot.Rel
 
 # ggsave("relcox2.png", width = 5.25, height = 4.35,dpi = 600)
 

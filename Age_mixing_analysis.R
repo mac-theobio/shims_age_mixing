@@ -22,6 +22,8 @@ theme_set(theme_bw()) # set global plot theme
 # number of male participants
 length(table(DT.Agemix.men$Uid))
 partlevels = c("casual partner","regular partner","husband/wife")
+freqlevels = c("never","sometimes","always")
+sexlevels = c("1","between 2-5","between 6-10","more than 10")
 # =========================
 # Subset and Exploratory data analysis
 # =========================
@@ -31,9 +33,11 @@ DT.Agemix.men <- transmute(DT.Agemix.men,
                           Participant.age,
                           Age.difference,
                           Partner.age,
+                          Condom.frequency = ordered(Condom.frequency, levels = freqlevels),
+                          Sex.frequency = ordered(Sex.frequency, levels = sexlevels),
                           Partner.type = ordered(Partner.type, levels = partlevels, 
                                                  labels =c("casual partner","regular partner", "spouse"))) %>% 
-  drop_na(c(Partner.age,Participant.age,Partner.type))
+  drop_na(c(Partner.age,Participant.age,Condom.frequency))
 
 summary(DT.Agemix.men)
 # men who reported 1,2,3 partner
@@ -92,6 +96,87 @@ ggplot(DT.Agemix.men,aes(Participant.age,Partner.age)) +
   facet_grid(~ Partner.type)
 
 # ggsave("rawdata_facet.png", width = 8.25, height = 3.25,dpi = 600)
+
+# Age difference
+summary(DT.Agemix.men)
+
+ggplot(DT.Agemix.men,aes(Participant.age,Age.difference)) +
+  geom_jitter(aes(color = Partner.type), size=3, width = 0.25, height = 0.25, alpha = 0.5) +
+  xlab("Participant's age at relationship formation") +
+  ylab("Age difference") + 
+  scale_x_continuous(labels = function(x)x+12, breaks = seq(-2,50, by=5)) +
+  scale_y_continuous(breaks = scales::pretty_breaks(n = 10))+
+  coord_fixed()+
+  geom_hline(yintercept = 0, linetype = "dashed")
+
+# ggsave("rawdata.png", width = 6.25, height = 5.25,dpi = 600)
+
+# Alternatively
+ggplot(DT.Agemix.men,aes(Participant.age,Age.difference)) +
+  geom_jitter(size=2, width = 0.25, height = 0.25, alpha = 0.25) +
+  xlab("Participant's age at relationship formation") +
+  ylab("Age difference") + 
+  scale_x_continuous(labels = function(x)x+12, breaks = seq(-2,50, by=5)) +
+  scale_y_continuous(breaks = scales::pretty_breaks(n = 10))+
+  coord_fixed() + 
+  theme(panel.grid.minor = element_blank())+
+  facet_grid(~ Sex.frequency) +
+  geom_hline(yintercept = 0, linetype = "dashed")
+
+# ggsave("rawdata_facet.png", width = 8.25, height = 3.25,dpi = 600)
+
+# 2D Density plots
+# to avoid overplotting when you have many data points
+# calculates the denstity of obsevations in each region of the plot and fills with color
+# color corresponds to the density of the data
+# for ref: https://www.sharpsightlabs.com/blog/density-plot-in-r/
+
+
+# ggplot(DT.Agemix.men,aes(Participant.age,Age.difference)) +
+#   stat_density_2d(aes(fill = ..density..), geom = "raster", contour = F) +
+#   scale_fill_distiller(palette = "Spectral", direction = -1)
+# 
+# ggplot(DT.Agemix.men,aes(Participant.age,Age.difference)) +
+#   stat_density_2d(aes(fill = ..density..), geom = "tile", contour = F) +
+#   scale_fill_distiller(palette = "Spectral", direction = -1)
+# 
+# # geom tile or raster gave same output
+
+ggplot(DT.Agemix.men,aes(Participant.age,Age.difference)) +
+  stat_density_2d(aes(fill = ..density..),geom = "raster", contour = F) +
+  scale_fill_distiller(palette = "Spectral", direction = -1) +
+  facet_grid(~ Partner.type) +
+  xlab("Participant's age at relationship formation") +
+  ylab("Age difference") + 
+  scale_x_continuous(labels = function(x)x+12, breaks = seq(-2,50, by=5)) +
+  scale_y_continuous(breaks = scales::pretty_breaks(n = 10))+
+  coord_fixed() 
+
+ggsave("rawdata_parttype.png", width = 8.25, height = 3.25,dpi = 600)
+
+ggplot(DT.Agemix.men,aes(Participant.age,Age.difference)) +
+  stat_density_2d(aes(fill = ..density..),geom = "raster", contour = F) +
+  scale_fill_distiller(palette = "Spectral", direction = -1) +
+  facet_grid(~ Condom.frequency) +
+  xlab("Participant's age at relationship formation") +
+  ylab("Age difference") + 
+  scale_x_continuous(labels = function(x)x+12, breaks = seq(-2,50, by=5)) +
+  scale_y_continuous(breaks = scales::pretty_breaks(n = 10))+
+  coord_fixed() 
+
+ggsave("rawdata_condomfreq.png", width = 8.25, height = 3.25,dpi = 600)
+
+ggplot(DT.Agemix.men,aes(Participant.age,Age.difference)) +
+  stat_density_2d(aes(fill = ..density..),geom = "raster", contour = F) +
+  scale_fill_distiller(palette = "Spectral", direction = -1) +
+  facet_grid(~ Sex.frequency) +
+  xlab("Participant's age at relationship formation") +
+  ylab("Age difference") + 
+  scale_x_continuous(labels = function(x)x+12, breaks = seq(-2,50, by=5)) +
+  scale_y_continuous(breaks = scales::pretty_breaks(n = 10))+
+  coord_fixed() 
+
+ggsave("rawdata_sexfreq.png", width = 8.25, height = 3.25,dpi = 600)
 
 # transforming the data to see if we can rectify the spread
 
