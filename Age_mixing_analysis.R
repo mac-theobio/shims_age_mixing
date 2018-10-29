@@ -152,7 +152,7 @@ ggplot(DT.Agemix.men,aes(Participant.age,Age.difference)) +
   scale_y_continuous(breaks = scales::pretty_breaks(n = 10))+
   coord_fixed() 
 
-ggsave("rawdata_parttype.png", width = 8.25, height = 3.25,dpi = 600)
+# ggsave("rawdata_parttype.png", width = 8.25, height = 3.25,dpi = 600)
 
 ggplot(DT.Agemix.men,aes(Participant.age,Age.difference)) +
   stat_density_2d(aes(fill = ..density..),geom = "raster", contour = F) +
@@ -164,7 +164,7 @@ ggplot(DT.Agemix.men,aes(Participant.age,Age.difference)) +
   scale_y_continuous(breaks = scales::pretty_breaks(n = 10))+
   coord_fixed() 
 
-ggsave("rawdata_condomfreq.png", width = 8.25, height = 3.25,dpi = 600)
+# ggsave("rawdata_condomfreq.png", width = 8.25, height = 3.25,dpi = 600)
 
 ggplot(DT.Agemix.men,aes(Participant.age,Age.difference)) +
   stat_density_2d(aes(fill = ..density..),geom = "raster", contour = F) +
@@ -176,7 +176,7 @@ ggplot(DT.Agemix.men,aes(Participant.age,Age.difference)) +
   scale_y_continuous(breaks = scales::pretty_breaks(n = 10))+
   coord_fixed() 
 
-ggsave("rawdata_sexfreq.png", width = 8.25, height = 3.25,dpi = 600)
+# ggsave("rawdata_sexfreq.png", width = 8.25, height = 3.25,dpi = 600)
 
 # transforming the data to see if we can rectify the spread
 
@@ -188,8 +188,8 @@ ggplot(DT.Agemix.men,aes(Participant.age,log(Partner.age))) +
   scale_x_continuous(labels = function(x)x+12, breaks = scales::pretty_breaks(n = 10)) 
 
 # Box Cox
-distBCMod <- caret::BoxCoxTrans(DT.Agemix.men$Partner.age)
-print(distBCMod)
+# distBCMod <- caret::BoxCoxTrans(DT.Agemix.men$Partner.age)
+# print(distBCMod)
 
 DT.Agemix.men_new <- cbind(DT.Agemix.men, Partner.age_new = predict(distBCMod, DT.Agemix.men$Partner.age))
 
@@ -284,9 +284,9 @@ intervals(agemix.M2)
 
 fixef(agemix.M2) # to extract the fixed effects estimates
 
-fitted(agemix.M2) # to obtain the fitted values
+# fitted(agemix.M2) # to obtain the fitted values
 
-coef(agemix.M2) # to obtain the coefficient for each participant
+# coef(agemix.M2) # to obtain the coefficient for each participant
 VarCorr(agemix.M2)
 # to fit using Maximum likelihood use update and do a likelihood ratio test 
 anova(update(agemix.M0, method= "ML"), update(agemix.M2, method= "ML"))
@@ -441,11 +441,11 @@ confint.between <- data.frame(participant.age = part,
 
 
 Agemix.plot <- ggplot(DT.Agemix.men,aes(Participant.age,Partner.age)) +
-  geom_jitter(color = "black",size=3, width = 0.25, height = 0.25, alpha = 0.5) +
+  geom_jitter(color = "black",size=1, width = 0.25, height = 0.25, alpha = 0.2) +
   xlab("Participant's age at relationship formation") +
   ylab("Partner's age at relationship formation") + 
   scale_x_continuous(labels = function(x)x+12, breaks = seq(-2,50, by=5), expand = c(0,0), limits = c(0,40)) +
-  scale_y_continuous(breaks = scales::pretty_breaks(n = 10),expand = c(0,0), limits = c(0,40)) +
+  scale_y_continuous(breaks = scales::pretty_breaks(n = 10),expand = c(0,0), limits = c(0,45)) +
   coord_fixed()+ 
   theme(axis.text.x = element_text(size=11),panel.grid.minor = element_blank(),
         axis.text.y = element_text(size=11)) +
@@ -471,7 +471,7 @@ Agemix.plot2 <- ggplot(DT.Agemix.men.2,aes(Participant.age,Partner.age)) +
   xlab("Participant's age at relationship formation") +
   ylab("Partner's age at relationship formation") + 
   scale_x_continuous(labels = function(x)x+12, breaks = scales::pretty_breaks(n = 10), expand = c(0,0),limits = c(-15,35)) +
-  scale_y_continuous(breaks = scales::pretty_breaks(n = 10),expand = c(0,0), limits = c(0,40)) +
+  scale_y_continuous(breaks = scales::pretty_breaks(n = 10),expand = c(0,0), limits = c(0,45)) +
   coord_fixed()+ 
   theme(axis.text.x = element_text(size=12),panel.grid.minor = element_blank(),
         axis.text.y = element_text(size=12)) +

@@ -1018,13 +1018,13 @@ L = quantile(DT.partnerdata.men$Age.difference, probs = 0.25) - H
 DT.partnerdata.men <- filter(DT.partnerdata.men, Age.difference >= L & Age.difference <= U)
 DT.partnerdata.men <- filter(DT.partnerdata.men, No.partners > 0)
 
-(table(DT.partnerdata.men$Partner.type)/5132)*100
-
 # to contrast age difference across the 3 partner type levels we use the following boxplot. 
 plot(Age.difference ~ Partner.type,
      data = DT.partnerdata.men)
 
 # partner frequncies levels
+table(DT.partnerdata.men$Partner.type)
+
 ggplot(data = DT.partnerdata.men) +
   geom_bar(aes(Partner.type))
 
@@ -1037,6 +1037,22 @@ table(DT.partnerdata.men.bi.multi.variate$Partner.type, DT.partnerdata.men.bi.mu
 table(DT.partnerdata.men.bi.multi.variate$Partner.type,DT.partnerdata.men.bi.multi.variate$No.partners.category)
 
 ftable(table(DT.partnerdata.men.bi.multi.variate$Partner.type, DT.partnerdata.men.bi.multi.variate$No.partners.category,DT.partnerdata.men.bi.multi.variate$Age.diff.category), row.vars = 1)
+
+
+
+## Examination of negative age differences
+
+DT.partnerdata.men.negativeagediff <- filter(DT.partnerdata.men, Age.difference < -5)
+
+table(DT.partnerdata.men.negativeagediff$Partner.type)/91
+
+ggplot(data = DT.partnerdata.men.negativeagediff, aes(x= factor(1), fill = Partner.type)) +
+  geom_bar(width = 1) +
+  coord_polar("y") +
+  theme(axis.text.x = element_blank()) +
+  geom_text(label = percent(value/100), size = 5)
+  
+
 
 # ** Step 1, ordinary partner level model ----------------------------------------
 # A cumulative logit model that includes the effect of age difference on condom use
