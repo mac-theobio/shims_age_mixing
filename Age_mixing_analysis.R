@@ -27,9 +27,17 @@ sexlevels = c("1","between 2-5","between 6-10","more than 10")
 # =========================
 # Subset and Exploratory data analysis
 # =========================
+DT.Agemix.men.1 <- DT.Agemix.men[is.na(DT.Agemix.men$Partner.age),]
+summary(DT.Agemix.men.1)
+(table(DT.Agemix.men.1$Partner.type)/553)*100
+(table(DT.Agemix.men.1$Condom.frequency)/553)*100
+(table(DT.Agemix.men.1$Sex.frequency)/553)*100
+
 
 DT.Agemix.men <- transmute(DT.Agemix.men,
                           Uid,
+                          HHid,
+                          SHIMS.EA,
                           Participant.age,
                           Age.difference,
                           Partner.age,
@@ -37,13 +45,20 @@ DT.Agemix.men <- transmute(DT.Agemix.men,
                           Sex.frequency = ordered(Sex.frequency, levels = sexlevels),
                           Partner.type = ordered(Partner.type, levels = partlevels, 
                                                  labels =c("casual partner","regular partner", "spouse"))) %>% 
-  drop_na(c(Partner.age,Participant.age,Condom.frequency))
+  drop_na(c(Partner.age))
 
 summary(DT.Agemix.men)
+
 # men who reported 1,2,3 partner
-sum(table(DT.Agemix.men$Uid) == 1)
-sum(table(DT.Agemix.men$Uid) == 2)
-sum(table(DT.Agemix.men$Uid) == 3)
+
+x <- count(DT.Agemix.men, Uid)
+sum(count(DT.Agemix.men, Uid)$n == 1)
+sum(count(DT.Agemix.men, Uid)$n == 2)
+sum(count(DT.Agemix.men, Uid)$n == 3)
+
+# (table(DT.Agemix.men$Condom.frequency)/5235)*100
+# (table(DT.Agemix.men$Partner.type)/5235)*100
+# (table(DT.Agemix.men$Sex.frequency)/5235)*100
 
 # the distribution of the partner age: the response
 ggplot(DT.Agemix.men,aes(x= Partner.age)) +
@@ -75,7 +90,7 @@ DT.Agemix.men <- filter(DT.Agemix.men, Partner.age >= L & Partner.age <= U)
 # DT.Agemix.men.2$Participant.age.more.15 <- as.factor(ifelse(DT.Agemix.men.2$Participant.age > 0, 1, 0))
 
 ggplot(DT.Agemix.men,aes(Participant.age,Partner.age)) +
-  geom_jitter(aes(color = Partner.type), size=3, width = 0.25, height = 0.25, alpha = 0.5) +
+  geom_jitter(aes(color = Partner.type), size=1, width = 0.25, height = 0.25, alpha = 0.2) +
   xlab("Participant's age at relationship formation") +
   ylab("Partner's age at relationship formation") + 
   scale_x_continuous(labels = function(x)x+12, breaks = seq(-2,50, by=5)) +
@@ -86,7 +101,7 @@ ggplot(DT.Agemix.men,aes(Participant.age,Partner.age)) +
 
 # Alternatively
 ggplot(DT.Agemix.men,aes(Participant.age,Partner.age)) +
-  geom_jitter(size=2, width = 0.25, height = 0.25, alpha = 0.25) +
+  geom_jitter(size=1, width = 0.25, height = 0.25, alpha = 0.2) +
   xlab("Participant's age at relationship formation") +
   ylab("Partner's age at relationship formation") + 
   scale_x_continuous(labels = function(x)x+12, breaks = seq(-2,50, by=5)) +
@@ -101,9 +116,9 @@ ggplot(DT.Agemix.men,aes(Participant.age,Partner.age)) +
 summary(DT.Agemix.men)
 
 ggplot(DT.Agemix.men,aes(Participant.age,Age.difference)) +
-  geom_jitter(aes(color = Partner.type), size=3, width = 0.25, height = 0.25, alpha = 0.5) +
+  geom_jitter(aes(color = Partner.type), size=1, width = 0.25, height = 0.25, alpha = 0.2) +
   xlab("Participant's age at relationship formation") +
-  ylab("Age difference") + 
+  ylab("Partner age difference") + 
   scale_x_continuous(labels = function(x)x+12, breaks = seq(-2,50, by=5)) +
   scale_y_continuous(breaks = scales::pretty_breaks(n = 10))+
   coord_fixed()+
@@ -113,14 +128,16 @@ ggplot(DT.Agemix.men,aes(Participant.age,Age.difference)) +
 
 # Alternatively
 ggplot(DT.Agemix.men,aes(Participant.age,Age.difference)) +
-  geom_jitter(size=2, width = 0.25, height = 0.25, alpha = 0.25) +
+  geom_jitter(size=1, width = 0.25, height = 0.25, alpha = 0.2) +
   xlab("Participant's age at relationship formation") +
-  ylab("Age difference") + 
+  ylab("Partner age difference") + 
   scale_x_continuous(labels = function(x)x+12, breaks = seq(-2,50, by=5)) +
   scale_y_continuous(breaks = scales::pretty_breaks(n = 10))+
   coord_fixed() + 
   theme(panel.grid.minor = element_blank())+
-  facet_grid(~ Sex.frequency) +
+  #facet_grid(~ Condom.frequency) +
+  #facet_grid(~ Sex.frequency) +
+  facet_grid(~ Partner.type) +
   geom_hline(yintercept = 0, linetype = "dashed")
 
 # ggsave("rawdata_facet.png", width = 8.25, height = 3.25,dpi = 600)
@@ -147,7 +164,7 @@ ggplot(DT.Agemix.men,aes(Participant.age,Age.difference)) +
   scale_fill_distiller(palette = "Spectral", direction = -1) +
   facet_grid(~ Partner.type) +
   xlab("Participant's age at relationship formation") +
-  ylab("Age difference") + 
+  ylab("Partner age difference") + 
   scale_x_continuous(labels = function(x)x+12, breaks = seq(-2,50, by=5)) +
   scale_y_continuous(breaks = scales::pretty_breaks(n = 10))+
   coord_fixed() 
@@ -159,7 +176,7 @@ ggplot(DT.Agemix.men,aes(Participant.age,Age.difference)) +
   scale_fill_distiller(palette = "Spectral", direction = -1) +
   facet_grid(~ Condom.frequency) +
   xlab("Participant's age at relationship formation") +
-  ylab("Age difference") + 
+  ylab("Partner age difference") + 
   scale_x_continuous(labels = function(x)x+12, breaks = seq(-2,50, by=5)) +
   scale_y_continuous(breaks = scales::pretty_breaks(n = 10))+
   coord_fixed() 
@@ -171,7 +188,7 @@ ggplot(DT.Agemix.men,aes(Participant.age,Age.difference)) +
   scale_fill_distiller(palette = "Spectral", direction = -1) +
   facet_grid(~ Sex.frequency) +
   xlab("Participant's age at relationship formation") +
-  ylab("Age difference") + 
+  ylab("Partner age difference") + 
   scale_x_continuous(labels = function(x)x+12, breaks = seq(-2,50, by=5)) +
   scale_y_continuous(breaks = scales::pretty_breaks(n = 10))+
   coord_fixed() 
@@ -191,13 +208,13 @@ ggplot(DT.Agemix.men,aes(Participant.age,log(Partner.age))) +
 # distBCMod <- caret::BoxCoxTrans(DT.Agemix.men$Partner.age)
 # print(distBCMod)
 
-DT.Agemix.men_new <- cbind(DT.Agemix.men, Partner.age_new = predict(distBCMod, DT.Agemix.men$Partner.age))
-
-ggplot(DT.Agemix.men_new,aes(Participant.age,Partner.age_new)) +
-  geom_jitter(size=3,color="black", width = 0.25, height = 0.25, alpha = 0.5) +
-  xlab("Age") +
-  ylab("Partner age") +
-  scale_x_continuous(labels = function(x)x+12, breaks = scales::pretty_breaks(n = 10)) 
+# DT.Agemix.men_new <- cbind(DT.Agemix.men, Partner.age_new = predict(distBCMod, DT.Agemix.men$Partner.age))
+# 
+# ggplot(DT.Agemix.men_new,aes(Participant.age,Partner.age_new)) +
+#   geom_jitter(size=3,color="black", width = 0.25, height = 0.25, alpha = 0.5) +
+#   xlab("Age") +
+#   ylab("Partner age") +
+#   scale_x_continuous(labels = function(x)x+12, breaks = scales::pretty_breaks(n = 10)) 
 
 # very bad.
 # we model with robust standard errors (non constant variance of errors). This way, we account for
@@ -208,7 +225,7 @@ ggplot(DT.Agemix.men_new,aes(Participant.age,Partner.age_new)) +
 summary(DT.Agemix.men)
 
 ggplot(data = DT.Agemix.men, aes(Participant.age + 12)) +
-  geom_histogram(bins = 30) +
+  geom_histogram(bins = 30, col = "gray66", fill = "gray68") +
   xlab("Participant's age") +
   ylab("Relationships") +
   theme(axis.text.x = element_text(size=19), panel.grid.minor = element_blank(),
@@ -220,7 +237,7 @@ ggplot(data = DT.Agemix.men, aes(Participant.age + 12)) +
 # ggsave("participanthist.png", width = 6.25, height = 5.25,dpi = 600)
 
 ggplot(data = DT.Agemix.men, aes(Partner.age)) +
-  geom_histogram(bins = 30, na.rm = T) +
+  geom_histogram(bins = 30, na.rm = T,col = "gray66", fill = "gray68") +
   xlab("Partner's age") +
   ylab("Relationships") +
   theme(axis.text.x = element_text(size=19), panel.grid.minor = element_blank(),
@@ -253,9 +270,29 @@ summary(agemix.M0)
 # null model helps us understand the structure of the data. Gives baseline AIC/BIC values
 ICC <- as.numeric(VarCorr(agemix.M0)[1])/(as.numeric(VarCorr(agemix.M0)[1]) + as.numeric(VarCorr(agemix.M0)[2]))
 ICC
+
 # ICC = 0.49 which means that the correlation of partner age score within an individual
 
+# agemix.M01 <- lme(Partner.age ~  1, 
+#                  data = DT.Agemix.men,
+#                  method = "REML",
+#                  random = list(HHid = ~1,
+#                                Uid = ~1))
+# summary(agemix.M01)
+# 
+x <-  lme4::lmer(Partner.age ~ 1 + (1|Uid) + (1|HHid) + (1|SHIMS.EA),
+            data = DT.Agemix.men)
+sjstats::icc(x)  #from sjstats library
 
+# ICC very low and so we can ignore clustering at higher levels
+
+# agemix.M02 <- lme(Partner.age ~  1, 
+#                  data = DT.Agemix.men,
+#                  method = "REML",
+#                  random = list(SHIMS.EA = ~1,
+#                                HHid = ~1,
+#                                Uid = ~1))
+# summary(agemix.M02)
 # fit a marginal model using gls
 agemix.M0.gls <- gls(Partner.age ~ 1, 
                         data = DT.Agemix.men)
@@ -275,7 +312,19 @@ agemix.M2 <- lme(Partner.age ~  Participant.age,
                          method = "REML",
                          random = ~1|Uid)
 
-summary(agemix.M2)
+# agemix.M2 <- lme(Partner.age ~  Participant.age, 
+#                  data = DT.Agemix.men,
+#                  method = "REML",
+#                  random = list(HHid = ~1,
+#                                Uid = ~1))
+# 
+# agemix.M2 <- lme(Partner.age ~  Participant.age, 
+#                  data = DT.Agemix.men,
+#                  method = "REML",
+#                  random = list(SHIMS.EA = ~1,
+#                                HHid = ~1,
+#                                Uid = ~1))
+# summary(agemix.M2)
 
 plot(agemix.M2)
 
@@ -343,7 +392,7 @@ ggplot(heteroscedastic, aes(fitted.M2, residuals.M2)) +
 # check why there is heteroscedasticity
 
 ggplot(heteroscedastic, aes(Participant.age, residuals.M2)) +
-  geom_point(size=3.5,color="black",alpha = 0.5) +
+  geom_jitter(color = "black",size=1, width = 0.25, height = 0.25, alpha = 0.2) +
   geom_hline(yintercept = 0) +
   xlab("Participant age") +
   ylab("Residuals") +
@@ -448,8 +497,8 @@ Agemix.plot <- ggplot(DT.Agemix.men,aes(Participant.age,Partner.age)) +
   scale_y_continuous(breaks = scales::pretty_breaks(n = 10),expand = c(0,0), limits = c(0,45)) +
   coord_fixed()+ 
   theme(axis.text.x = element_text(size=11),panel.grid.minor = element_blank(),
-        axis.text.y = element_text(size=11)) +
-  theme(text=element_text( size=11)) + 
+        axis.text.y = element_text(size=11), legend.position = "right") +
+  theme(text=element_text(size=11)) + 
   geom_abline(aes(intercept = fixef(agemix.M5)[["(Intercept)"]],slope = fixef(agemix.M5)[["Participant.age"]],color = "Population average"), size = 1.25) +
   geom_abline(aes(intercept = 12,slope =1, color = "Same age"), size = 1.25) +
   geom_line(data = confint, aes(x=participant.age-12, y=lci), size = 1,linetype = "dashed", color="orangered2") +
@@ -459,7 +508,7 @@ Agemix.plot <- ggplot(DT.Agemix.men,aes(Participant.age,Partner.age)) +
 
 Agemix.plot
 
-# ggsave("Agemixing.png", width = 9.25, height = 5.25,dpi = 600)
+# ggsave("Agemixing.png", width = 5.25, height = 5.25,dpi = 600)
 
 
 ######

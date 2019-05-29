@@ -3,21 +3,29 @@
 # load libraries
 
 library(tidyverse)
+library(psych) # computing icc
 
 ## load data and functions
 
-load("/Users/emanuel/Dropbox/SHIMS Baseline data/DT.Agemix.men.Rdata") # full dataset
+load("/Users/emanuel/Google Drive/SHIMS/SHIMS Baseline data/DT.Agemix.men.Rdata") # full dataset
+load("/Users/emanuel/Google Drive/SHIMS/SHIMS Baseline data/DT.Agemix.men.excluded.final.Rdata") # full dataset
 theme_set(theme_bw()) # set global plot theme 
 
-
 # Baseline Characteristics of male respondents aged 18-49 ---------------------------------
+# with at least one sex partner in the past 6 months
 
-(table(DT.Agemix.men$Condom.frequency) / 5634) * 100
-(table(DT.Agemix.men$Sex.frequency) / 5548) * 100
-(table(DT.Agemix.men$Partner.type) / 5684)*100
+summary(DT.Agemix.men)
+mean(DT.Agemix.men$Current.age); sd(DT.Agemix.men$Current.age)
+median(DT.Agemix.men$Current.age); IQR(DT.Agemix.men$Current.age)
+median(DT.Agemix.men$Age.sex.debut, na.rm = T); IQR(DT.Agemix.men$Age.sex.debut, na.rm = T)
+(table(DT.Agemix.men$Education.level)/5788)*100
 
-summary(DT.Agemix.men$Relationship.dur)
-
+# without a sexvpartner in the past 6 months
+summary(DT.Agemix.men.excluded.final)
+mean(DT.Agemix.men.excluded.final$Current.age); sd(DT.Agemix.men.excluded.final$Current.age)
+median(DT.Agemix.men.excluded.final$Current.age); IQR(DT.Agemix.men.excluded.final$Current.age)
+median(DT.Agemix.men.excluded.final$Age.sex.debut, na.rm = T); IQR(DT.Agemix.men.excluded.final$Age.sex.debut, na.rm = T)
+(table(DT.Agemix.men.excluded.final$Education.level)/2173)*100
 
 # the distribution of the age of the male participants
 
@@ -79,3 +87,21 @@ ggsave("partnerhist.png", width = 6.25, height = 5.25,dpi = 600)
 # measures of central tendency and dispersion
 summary(DT.Agemix.men$Partner.age)
 IQR(DT.Agemix.men$Partner.age)
+
+
+# # look at the distribution of ages of people who did not have at least one relationship
+load("/Users/emanuel/Dropbox/SHIMS Baseline data/DT.Agemix.men.excluded.Rdata") # full dataset
+
+# the distribution of the age of the male participants
+
+ggplot(data = DT.Agemix.men.excluded.final, aes(Current.age)) +
+  geom_histogram(bins = 30, na.rm = T, col = "gray66", fill = "gray68") +
+  xlab("Age") +
+  ylab("Relationships") +
+  theme(axis.text.x = element_text(size=14), panel.grid.minor = element_blank(),
+        axis.text.y = element_text(size=14)) +
+  theme(text=element_text( size=14)) +
+  scale_x_continuous(breaks = scales::pretty_breaks(n = 10)) +
+  scale_y_continuous(breaks = scales::pretty_breaks(n = 5.5))
+
+mean(DT.Agemix.men.excluded.final$Current.age) #23.52508
