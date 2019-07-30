@@ -105,3 +105,65 @@ ggplot(data = DT.Agemix.men.excluded.final, aes(Current.age)) +
   scale_y_continuous(breaks = scales::pretty_breaks(n = 5.5))
 
 mean(DT.Agemix.men.excluded.final$Current.age) #23.52508
+
+
+
+summary(DT.Agemix.men)
+
+# number of relationships for different variables
+count(DT.Agemix.men, Condom.frequency)
+count(DT.Agemix.men, Sex.frequency)
+count(DT.Agemix.men, Partner.type)
+count(DT.Agemix.men, Education.level)
+
+# number of participants for different variables
+count(count(DT.Agemix.men, Uid), n) # with 1, 2, 3 partners
+count(count(DT.Agemix.men, Uid, Condom.frequency), Condom.frequency)
+count(count(DT.Agemix.men, Uid, Sex.frequency), Sex.frequency)
+count(count(DT.Agemix.men, Uid, Partner.type), Partner.type)
+count(count(DT.Agemix.men, Uid, Education.level), Education.level)
+
+# subset all relationships where partner was casual
+# an alternative to line 40
+One.ormore.casual <- DT.Agemix.men %>% filter(Partner.type == "casual partner") %>% group_by(Uid) %>% 
+  summarise(n_distinct(Uid)) #unique Uid
+
+# subset all relationships where age difference is >= 5 years
+PAG.5ormore <- DT.Agemix.men %>% filter(abs(Age.difference) >= 5) %>% group_by(Uid) %>% 
+  summarise(n_distinct(Uid)) #unique Uid
+
+# subset all relationships where condom use is always
+Consistent.condomuse <- DT.Agemix.men %>% filter(Condom.frequency == "always") %>% count(Uid)
+Rels.each.participant <- count(DT.Agemix.men, Uid)
+XXX <- merge(Consistent.condomuse,Rels.each.participant, by= "Uid") %>%  # merge 2 tables
+  filter(n.x == n.y) # filter
+
+# age differences and relationships 
+
+x <- filter(DT.Agemix.men, Age.difference < 0)
+xx <- filter(DT.Agemix.men, Age.difference >= 0)
+
+xx1 <- filter(DT.Agemix.men, Age.difference < -5)
+xx2 <- filter(DT.Agemix.men, Age.difference >= -5 & Age.difference < 0)
+xx3 <- filter(DT.Agemix.men, Age.difference >= 0 & Age.difference < 5)
+xx4 <- filter(DT.Agemix.men, Age.difference >= 5 & Age.difference < 10)
+xx5 <- filter(DT.Agemix.men, Age.difference >= 10)
+
+
+# total number of men
+length(unique(DT.Agemix.men$Uid))
+
+length(unique(filter(DT.Agemix.men, Age.difference < 0)$Uid))/ length(unique(DT.Agemix.men$Uid)) # age gap <0
+
+length(unique(filter(DT.Agemix.men, Age.difference < -5)$Uid))/ length(unique(DT.Agemix.men$Uid)) # age gap <0
+length(unique(filter(DT.Agemix.men, Age.difference >= -5 & Age.difference < 0)$Uid))/ length(unique(DT.Agemix.men$Uid)) # age gap <0
+length(unique(filter(DT.Agemix.men, Age.difference >= 0 & Age.difference < 5)$Uid))/ length(unique(DT.Agemix.men$Uid)) # age gap <0
+length(unique(filter(DT.Agemix.men, Age.difference >= 5 & Age.difference < 10)$Uid))/ length(unique(DT.Agemix.men$Uid)) # age gap <0
+length(unique(filter(DT.Agemix.men, Age.difference >= 10)$Uid))/ length(unique(DT.Agemix.men$Uid)) # age gap >=10
+
+t.test(DT.Agemix.men$Age.difference) #CI
+
+ggplot(DT.Agemix.men, aes(No.partners)) +
+  geom_histogram()
+
+table(DT.Agemix.men$No.partners)
