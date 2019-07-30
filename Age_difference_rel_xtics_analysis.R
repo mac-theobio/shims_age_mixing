@@ -29,9 +29,8 @@ freqlevels = c("never","sometimes","always")
 sexlevels = c("1","between 2-5","between 6-10","more than 10")
 partlevels = c("husband/wife","regular partner","casual partner") # increased riskiness
 
-# mycols <- c("dodgerblue", "#2ecc71","#f9bf3b", "orangered2") 
-mycols3 <- c("#ffc08e", "#ec5d2f", "#88002d")
-mycols4 <- c("#c3c6fe","#ffc08e", "#ec5d2f", "#88002d")
+mycols3 <- c("#80d8ff", "#0288d1", "deepskyblue4")
+mycols4 <- c("#80d8ff", "#0288d1", "deepskyblue4","#00154d")
 
 theme_set(theme_bw()) # set global plot theme 
 
@@ -109,11 +108,13 @@ table(DT.reldata.men$Condom.frequency)
 
 ggplot(data = DT.reldata.men) +
   geom_bar(aes(Condom.frequency))
+# ggsave("Condomusefreq.png", width = 5.25, height = 4.35,dpi = 600)
 
 Rug.plot.condom <- geom_rug(data = DT.reldata.men, aes(x= Age.difference),
                             inherit.aes = FALSE, sides = "b", alpha = 0.05)
 
-# ggsave("Condomusefreq.png", width = 5.25, height = 4.35,dpi = 600)
+Rug.plot.condom.2 <- geom_rug(data = DT.reldata.men, aes(x= Participant.age),
+                              inherit.aes = FALSE, sides = "b", alpha = 0.05)
 
 # ** Step 1, ordinary partner level model ------------------------------------
 
@@ -302,7 +303,7 @@ Effects.condom.M3a.line.plot <- ggplot(Effects.condom.M3a, aes(x = Age.differenc
 
 
 Effects.condom.M3a.line.plot + Rug.plot.condom + theme(legend.position = "none") 
-ggsave("CondomuselineM3a.png", width = 5.25, height = 4.25,dpi = 600)
+# ggsave("CondomuselineM3a.png", width = 5.25, height = 4.25,dpi = 600)
 
 leg <- get_legend(Effects.condom.M3a.line.plot)
 ggplotify::as.ggplot(leg)
@@ -335,8 +336,6 @@ Effects.condom.M3b.line.plot <- ggplot(Effects.condom.M3b, aes(x = Participant.a
                                         scale_fill_manual("", values = c(mycols3))+
                                         xlim(10,50)
   
-Rug.plot.condom.2 <- geom_rug(data = DT.reldata.men, aes(x= Participant.age),
-                            inherit.aes = FALSE, sides = "b", alpha = 0.05)
 
 Effects.condom.M3b.line.plot + theme(legend.position = "none") + Rug.plot.condom.2
 # ggsave("CondomuselineM3b.png", width = 5.25, height = 4.35,dpi = 600)
@@ -454,6 +453,9 @@ ftable(table(DT.sexdata.men.bi.multi.variate$Sex.frequency, DT.sexdata.men.bi.mu
 
 Rug.plot.sex <- geom_rug(data = DT.sexdata.men, aes(x= Age.difference),
                          inherit.aes = FALSE, sides = "b", alpha = 0.05)
+
+Rug.plot.sex.2 <- geom_rug(data = DT.sexdata.men, aes(x= Participant.age),
+                           inherit.aes = FALSE, sides = "b", alpha = 0.05)
 
 # ** Step 1, ordinary partner level model ----------------------------------------
 # A cumulative logit model that includes the effect of age difference on condom use
@@ -577,7 +579,7 @@ Effects.sex.M2.line.plot + Rug.plot.sex + theme(legend.position = "none")
 
 # ** Step 4, adjusted regression spline model--------------------------------------
 
-sex.M3 <- clmm(Sex.frequency ~ ns(Age.difference,df = 3) + ns(Participant.age, df = 3)+ No.partners  + (1|Uid) ,
+sex.M3 <- clmm(Sex.frequency ~ ns(Age.difference,df = 3) + ns(Participant.age, df = 3) + (1|Uid) ,
                data = DT.sexdata.men,
                nAGQ = 7,
                Hess = T) #if you need to call summary
@@ -602,7 +604,6 @@ Effects.sex.M3a <- Effect("Age.difference", sex.M3,
 Effects.sex.M3.line.plot <- ggplot(Effects.sex.M3a, aes(x = Age.difference, y=prob, col = cond)) + 
   geom_line(size = 1.25) + 
   geom_ribbon(aes(ymin = L, ymax = U, fill = cond), alpha = 0.3, linetype = "blank") +
-  #ylim(0.1,0.7) +
   xlab("Partner age difference") +
   ylab("Sex frequency (probability)") +
   theme(axis.text.x = element_text(size=19),
@@ -610,12 +611,12 @@ Effects.sex.M3.line.plot <- ggplot(Effects.sex.M3a, aes(x = Age.difference, y=pr
         text=element_text(size=19),
         legend.title = element_blank(),
         legend.position = "bottom") +
-  scale_color_manual(name = "Sex frequency", 
+  scale_color_manual(name = "", 
                      values = c(mycols4))+
   scale_fill_manual("", values = c(mycols4))
 
-leg <- get_legend(Effects.sex.M3.line.plot)
-ggplotify::as.ggplot(leg)
+leg2 <- get_legend(Effects.sex.M3.line.plot)
+ggplotify::as.ggplot(leg2)
 # ggsave("Sexfreqleg.png", width = 5.75, height = 0.5,dpi = 600)
 
 
@@ -648,13 +649,10 @@ Effects.sex.M3b.line.plot <- ggplot(Effects.sex.M3b, aes(x = Participant.age, y=
         text=element_text(size=19),
         legend.title = element_blank(),
         legend.position = "bottom") +
-  scale_color_manual(name = "Sex frequency", 
+  scale_color_manual(name = "", 
                      values = c(mycols4)) +
   scale_fill_manual("", values = c(mycols4))+
   xlim(10,50)
-
-Rug.plot.sex.2 <- geom_rug(data = DT.sexdata.men, aes(x= Participant.age),
-                            inherit.aes = FALSE, sides = "b", alpha = 0.05)
 
 Effects.sex.M3b.line.plot + theme(legend.position = "none") + Rug.plot.sex.2
 # ggsave("SexfreqlineM3b.png", width = 5.25, height = 4.35,dpi = 600)
@@ -752,7 +750,6 @@ table(DT.partnerdata.men.bi.multi.variate$Partner.type,DT.partnerdata.men.bi.mul
 ftable(table(DT.partnerdata.men.bi.multi.variate$Partner.type, DT.partnerdata.men.bi.multi.variate$No.partners.category,DT.partnerdata.men.bi.multi.variate$Age.diff.category), row.vars = 1)
 
 
-
 ## Examination of negative age differences
 
 DT.partnerdata.men.negativeagediff <- filter(DT.partnerdata.men, Age.difference < -7)
@@ -773,6 +770,13 @@ ggplot(data = DT.partnerdata.men.negativeagediff) +
         text=element_text( size=12))
 
 #ggsave("NegativeAD.png", width = 5.25, height = 4.35,dpi = 600)
+
+Rug.plot.part <- geom_rug(data = DT.partnerdata.men, aes(x= Age.difference),
+                          inherit.aes = FALSE, sides = "b", alpha = 0.05)
+
+Rug.plot.part.2 <- geom_rug(data = DT.partnerdata.men, aes(x= Participant.age),
+                            inherit.aes = FALSE, sides = "b", alpha = 0.05)
+
 
 # ** Step 1, ordinary partner level model ----------------------------------------
 # A cumulative logit model that includes the effect of age difference on condom use
@@ -847,27 +851,6 @@ partner.1a <- tidypart.1 %>%
 partner.1a
 # ggsave("Partnertype.png", width = 5.25, height = 4.35,dpi = 600)
 
-# Predicted effects on partner type
-tidypart.1b <- OrdPred(partner.M1,"Age.difference",DT.partnerdata.men)
-
-#VarPred(partner.M1,"Age.difference",DT.partnerdata.men)
-
-partner.pred <- tidypart.1b %>%
-  ggplot(aes(x = Age.difference, y = fit)) +
-  geom_line(size = 1.25, color = "dodgerblue") +
-  geom_ribbon(aes(ymin = lwr, ymax = upr),
-              alpha = 0.25,
-              fill = "dodgerblue") +
-  xlab("Partner age difference") +
-  ylab("Partner type score") +
-  theme(axis.text.x = element_text(size=15),
-        axis.text.y = element_text(size=15)) +
-  theme(text=element_text( size=15)) 
-
-partner.pred
-
-# ggsave("Partnerpred.png", width = 5.25, height = 4.35,dpi = 600)
-
 # ** Step 3, regression spline model --------------------------
 
 # cumulative logit random intercept model
@@ -911,41 +894,12 @@ Effects.partner.M2.line.plot <- ggplot(tidypart.2, aes(x = Age.difference, y=pro
   scale_color_manual("", values = c(mycols3))+
   scale_fill_manual("", values = c(mycols3))
 
-legpart <- get_legend(Effects.partner.M2.line.plot)
-ggplotify::as.ggplot(legpart)
-# ggsave("Partnertype2.png", width = 3.25, height = 0.25,dpi = 600)
-
-Rug.plot.part <- geom_rug(data = DT.partnerdata.men, aes(x= Age.difference),
-                          inherit.aes = FALSE, sides = "b", alpha = 0.05)
-
 Effects.partner.M2.line.plot+Rug.plot.part + theme(legend.position = "none")
 # ggsave("PartnertypeM2.png", width = 5.25, height = 4.25,dpi = 600)
 
-
-# Predicted effects on partner type
-tidypart.2b <- OrdPred(partner.M2, "Age.difference",DT.partnerdata.men)
-
-#VarPred(partner.M2,"Age.difference",DT.partnerdata.men)
-
-part.pred2 <- tidypart.2b %>%
-  ggplot(aes(x = Age.difference, y = fit)) +
-  geom_line(size = 1.25, color = "dodgerblue") +
-  geom_ribbon(aes(ymin = lwr, ymax = upr),
-              alpha = 0.25,
-              fill = "dodgerblue") +
-  xlab("Partner age difference") +
-  ylab("Partner type score") +
-  theme(axis.text.x = element_text(size=19),
-        axis.text.y = element_text(size=19)) +
-  theme(text=element_text( size=19)) 
-
-part.pred2 +Rug.plot.part
-# ggsave("Partnerpred2.png", width = 5.25, height = 4.35,dpi = 600)
-
-
 # ** Step 4, adjusted regression spline model--------------------------------------
 
-partner.M3 <- clmm(Partner.type ~ ns(Age.difference,df = 3) + ns(Participant.age, df = 4) + No.partners + (1|Uid),
+partner.M3 <- clmm(Partner.type ~ ns(Age.difference,df = 5) + ns(Participant.age, df = 5) + (1|Uid),
                   #random =  Uid,
                   data = DT.partnerdata.men,
                   #link = "logit", dont specify because effects dont work when specify
@@ -978,33 +932,16 @@ Effects.partner.M3a.line.plot <- ggplot(Effects.partner.M3a, aes(x = Age.differe
         text=element_text(size=19),
         legend.title = element_blank(),
         legend.position = "bottom") +
-  scale_color_manual(name = "Partner type", 
+  scale_color_manual(name = "", 
                      values = c(mycols3))+
   scale_fill_manual("", values = c(mycols3))
 
+legpart <- get_legend(Effects.partner.M3a.line.plot)
+ggplotify::as.ggplot(legpart)
+# ggsave("Partnertypeleg.png", width = 3.25, height = 0.25,dpi = 600)
 
 Effects.partner.M3a.line.plot + theme(legend.position = "none") + Rug.plot.part
 # ggsave("PartnertypeM3a.png", width = 5.25, height = 4.25,dpi = 600)
-
-# Predicted effects and plot
-
-Predictions.partner.M3a <- OrdPred(partner.M3,"Age.difference",DT.partnerdata.men)
-
-Predictions.partner.M3a.plot <- Predictions.partner.M3a %>%
-  ggplot(aes(x = Age.difference, y = fit)) +
-  geom_line(size = 1.25, color = "dodgerblue") +
-  geom_ribbon(aes(ymin = lwr, ymax = upr),
-              alpha = 0.25,
-              fill = "dodgerblue") +
-  xlab("Partner age difference") +
-  ylab("Partner type score") +
-  theme(axis.text.x = element_text(size=19),
-        axis.text.y = element_text(size=19)) +
-  theme(text=element_text( size=19)) 
-
-
-Predictions.partner.M3a.plot + Rug.plot.part
-# ggsave("Partnerpred3a.png", width = 5.25, height = 4.25,dpi = 600)
 
 
 # (ii) Age of participant effect
@@ -1035,85 +972,9 @@ Effects.partner.M3b.line.plot <- ggplot(Effects.partner.M3b, aes(x = Participant
   scale_fill_manual("", values = c(mycols3))+
   xlim(10,50)
 
-Rug.plot.part.2 <- geom_rug(data = DT.partnerdata.men, aes(x= Participant.age),
-                          inherit.aes = FALSE, sides = "b", alpha = 0.05)
 
 Effects.partner.M3b.line.plot + theme(legend.position = "none") + Rug.plot.part.2
 # ggsave("PartnertypeM3b.png", width = 5.25, height = 4.25,dpi = 600)
-
-# Predicted effects and plot
-Predictions.partner.M3b <- OrdPred(partner.M3,"Participant.age",DT.partnerdata.men)
-
-Predictions.partner.M3b.plot <- Predictions.partner.M3b %>%
-  ggplot(aes(x = Participant.age, y = fit)) +
-  geom_line(size = 1.25, color = "dodgerblue") +
-  geom_ribbon(aes(ymin = lwr, ymax = upr),
-              alpha = 0.25,
-              fill = "dodgerblue") +
-  xlab("Participant age") +
-  ylab("Partner type score") +
-  theme(axis.text.x = element_text(size=19), 
-        axis.text.y = element_text(size=19)) +
-  theme(text=element_text( size=19)) +
-  #scale_x_continuous(breaks = scales::pretty_breaks(n = 10)) +
-  xlim(10,50)
-
-Predictions.partner.M3b.plot + Rug.plot.part.2
-# ggsave("Partnerpred3b.png", width = 5.25, height = 4.25,dpi = 600)
-
-
-# (iii) Number of partners effect
-Effects.partner.M3c <- Effect("No.partners", partner.M3, 
-                             xlevels = list(No.partners = 50)) %>%
-  data.frame() %>%
-  select(-matches("logit.")) %>%
-  gather(var, value, - No.partners) %>%
-  separate(var, c("fit", "cond"), extra = "merge") %>%
-  mutate(cond = gsub("prob.", "", cond) %>%
-           ordered(levels = c("husband.wife","regular.partner","casual.partner"))%>%
-           plyr::mapvalues(from = c("husband.wife","regular.partner","casual.partner"),
-                           to = c("spouse","regular","casual"))) %>% 
-  spread(fit, value) 
-
-Effects.partner.M3c.line.plot <- ggplot(Effects.partner.M3c, aes(x = No.partners, y=prob, col = cond)) + 
-  geom_line(size = 1.25) + 
-  geom_ribbon(aes(ymin = L, ymax = U, fill = cond), alpha = 0.3, linetype = "blank") +
-  #ylim(0.1,0.7) +
-  xlab("Number of partners") +
-  ylab("Partner type (probability)") +
-  theme(axis.text.x = element_text(size=19),
-        axis.text.y = element_text(size=19),
-        text=element_text(size=19),
-        legend.title = element_blank(),
-        legend.position = "bottom") +
-  scale_color_manual(name = "Partner type", 
-                     values = c(mycols.p)) +
-  scale_fill_manual("", values = c(mycols.p))
-
-Rug.plot.part.3 <- geom_rug(data = DT.partnerdata.men, aes(x= No.partners),
-                          inherit.aes = FALSE, sides = "b", alpha = 0.05)
-
-Effects.partner.M3c.line.plot + theme(legend.position = "none") + Rug.plot.part.3
-# ggsave("PartnertypeM3c.png", width = 5.25, height = 4.25,dpi = 600)
-
-# Predicted effects and plot
-Predictions.partner.M3c <- OrdPred(partner.M3,"No.partners",DT.partnerdata.men)
-
-Predictions.partner.M3c.plot <- Predictions.partner.M3c %>%
-  ggplot(aes(x = No.partners, y = fit)) +
-  geom_line(size = 1.25, color = "dodgerblue") +
-  geom_ribbon(aes(ymin = lwr, ymax = upr),
-              alpha = 0.25,
-              fill = "dodgerblue") +
-  xlab("Number of partners") +
-  ylab("Partner type score") +
-  theme(axis.text.x = element_text(size=19),
-        axis.text.y = element_text(size=19)) +
-  theme(text=element_text( size=19)) +
-  scale_x_continuous(breaks = scales::pretty_breaks(n = 10)) 
-
-Predictions.partner.M3c.plot + Rug.plot.part.3
-# ggsave("Partnerpred3c.png", width = 5.25, height = 4.25,dpi = 600)
 
 # Relationship duration analysis ------------------------------------------
 
