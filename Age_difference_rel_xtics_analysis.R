@@ -1016,7 +1016,13 @@ DT.coxdata.men <- filter(DT.coxdata.men, Age.difference >= L & Age.difference <=
 
 DT.coxdata.men <- filter(DT.coxdata.men, zoo::as.yearmon(End.rel.date,"%b%y") <= zoo::as.yearmon(EnrollmentDate))
 
-# Create a survival object
+
+
+Rug.plot.Rel <- geom_rug(data = DT.coxdata.men, aes(x= Age.difference),
+                         inherit.aes = FALSE, sides = "b", alpha = 0.05)
+
+
+# ** Create a survival object-------------------------------------
 
 DT.coxdata.men$SurvObj <- with(DT.coxdata.men, Surv(Relationship.dur, Rel.dissolved))
 
@@ -1077,6 +1083,7 @@ plot(residuals(Reldurmod.M1, type = "schoenfeld"))
 # abline(h=0,lty=3)
 # # p value greater than 0.05 indicating no violation
 
+# ** Unadjusted model -------------------------------------
 
 Reldurmod.M <- coxph(Surv(Relationship.dur, Rel.dissolved) ~ Age.difference + Partner.type,
                       data = DT.coxdata.men)
@@ -1160,10 +1167,6 @@ rel.pred.1 <- tidyreldur.1 %>%
         axis.text.y = element_text(size=19))+
   theme(text=element_text(size=19)) 
 
-
-Rug.plot.Rel <- geom_rug(data = DT.coxdata.men, aes(x= Age.difference),
-                          inherit.aes = FALSE, sides = "b", alpha = 0.05)
-
 rel.pred.1 + Rug.plot.Rel
 
 # ggsave("relcox1.png", width = 5.25, height = 4.35,dpi = 600)
@@ -1196,7 +1199,7 @@ reldur.1 <- Predicted.survivor %>%
   ggplot(aes(x = time, 
              y = value)) +
   geom_line(aes(color = strata, linetype = var), size = 1.25) + 
-  scale_color_manual(name = "Partner type", values = c("#f9bf3b","dodgerblue", "#2ecc71"),
+  scale_color_manual(name = "Partner type", values = mycols3,
                      labels = c("casual","spouse","regular")) +
   scale_linetype_manual(name = "Partner age difference",
                         values = c("solid","dashed","dotted","longdash", "dotdash"),
@@ -1227,7 +1230,7 @@ reldur.1 + theme(legend.position = "none")
 # Examinig the distribution of survival times (adjusted survival curve-adjusted for age difference)
 plot(survfit(Reldurmod.cluster.M1), ylim =c(0,1), xlab = "Years", ylab = "Survival probability", main = "Survival Curve")
 
-Reldurmod.cluster.M2 <- coxph(Surv(Relationship.dur, Rel.dissolved) ~ ns(Age.difference,4) + ns(Participant.age, df=3) + No.partners +  cluster(Uid) + strata(Partner.type), 
+Reldurmod.cluster.M2 <- coxph(Surv(Relationship.dur, Rel.dissolved) ~ ns(Age.difference,1) + ns(Participant.age, df=3) +  cluster(Uid) + strata(Partner.type), 
                       data = DT.coxdata.men)
 
 summary(Reldurmod.cluster.M2)
@@ -1248,9 +1251,9 @@ rel.pred.2 <- tidyreldur.2 %>%
   ggplot(aes(x = Age.difference, y = hr)) +
   geom_ribbon(aes(ymin = lwr, ymax = upr),
               alpha = 0.25, 
-              fill = "dodgerblue") +
+              fill = "#0288d1") +
   geom_line(size = 1.25, 
-            color = "dodgerblue") +
+            color = "#0288d1") +
   geom_hline(yintercept = 1, linetype = "dashed") +
   xlab("Partner age difference") +
   ylab("Hazard Ratio") +
@@ -1278,7 +1281,7 @@ reldur.2 <- Predicted.survivor.2 %>%
   ggplot(aes(x = time, 
              y = value)) +
   geom_line(aes(color = strata, linetype = var), size = 1.25) +
-  scale_color_manual(name = "Partner type", values = c("#f9bf3b","dodgerblue", "#2ecc71"),
+  scale_color_manual(name = "Partner type", values = mycols3,
                      labels = c("casual","spouse","regular")) +
   scale_linetype_manual(name = "Partner age difference",
                         values = c("solid","dashed","dotted","longdash", "dotdash"),
@@ -1297,18 +1300,6 @@ reldur.2
 
 reldur.2 + theme(legend.position = "none")
 # ggsave("survivalcurvesM2.png", width = 5.25, height = 4.35,dpi = 600)
-
-
-fit2 <- coxph(Surv(Relationship.dur, Rel.dissolved) ~ Age.diff.cat + Participant.age + No.partners + cluster(Uid), 
-             data = DT.coxdata.men)
-fit2
-
-new.df2 <- with(DT.coxdata.men, data.frame(Age.diff.cat = c("younger","non-AD","intra-GAD", "inter-GAD"), Participant.age = rep(mean(Participant.age),4), No.partners = rep(mean(No.partners),4)))
-
-xx2 <- ggsurvplot(survfit(fit2, newdata = new.df2),data = new.df, pval = F, legend = "none", legend.title = "Age Gaps", legend.labs = c("younger", "non-AD", "intra-GAD", "inter-GAD"), ggtheme = theme_bw(), censor = F, conf.int = F, palette = mycols3, font.y = 15, font.x=15, font.tickslab = 15)
-xx2
-
-ggsave("survivalcat2.png", width = 5.25, height = 4.35,dpi = 600)
 
 
 # Extras ------------------------------------------------------------------
