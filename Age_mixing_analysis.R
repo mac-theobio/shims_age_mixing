@@ -504,7 +504,7 @@ Agemix.plot <- ggplot(DT.Agemix.men,aes(Participant.age,Partner.age)) +
   geom_line(data = confint, aes(x=participant.age-12, y=lci), size = 1,linetype = "dashed", color="orangered2") +
   geom_line(data = confint, aes(x=participant.age-12, y=uci), size = 1,linetype = "dashed", color="orangered2") +
   scale_colour_manual(name= element_blank(),
-                      values=c("Population average" = "orangered2", "Same age" ="dodgerblue")) 
+                      values=c("Population average" = "orangered2", "Same age" ="#0288d1")) 
 
 Agemix.plot
 
@@ -526,7 +526,7 @@ Agemix.plot2 <- ggplot(DT.Agemix.men.2,aes(Participant.age,Partner.age)) +
         axis.text.y = element_text(size=12)) +
   theme(text=element_text( size=12)) + 
   geom_abline(aes(intercept = fixef(agemix.M5)[["(Intercept)"]],slope = fixef(agemix.M5)[["Participant.age"]],color = "Population average"), color = "orangered2", size = 1.25) +
-  geom_abline(aes(intercept = 12,slope =1,color = "Same age"), color = "dodgerblue", size = 1.25) +
+  geom_abline(aes(intercept = 12,slope =1,color = "Same age"), color = "#0288d1", size = 1.25) +
   geom_line(data = confint, aes(x=participant.age-12, y=lci), size = 1,linetype = "dashed", color="orangered2") +
   geom_line(data = confint, aes(x=participant.age-12, y=uci), size = 1,linetype = "dashed", color="orangered2") +
   scale_colour_manual("Participant age", labels = c("Less than 12 years", "12 years or more"),
