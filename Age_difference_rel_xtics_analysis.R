@@ -387,7 +387,7 @@ table(DT.reldata.men.bi.multi.variate$Condom.frequency,DT.reldata.men.bi.multi.v
 
 ftable(table(DT.reldata.men.bi.multi.variate$Condom.frequency, DT.reldata.men.bi.multi.variate$No.partners.category,DT.reldata.men.bi.multi.variate$Age.diff.category), col.vars =2 )
 
-condom.M3 <- clmm(Condom.frequency ~ ns(Age.difference,df = 4) + ns(Participant.age, df = 3) + No.partners + (1|Uid),
+condom.M3 <- clmm(Condom.frequency ~ ns(Age.difference,df = 4) + ns(Participant.age, df = 4) + (1|Uid),
                   #random =  Uid,
                   data = DT.reldata.men,
                   #link = "logit", dont specify because effects dont work when specify
@@ -1863,9 +1863,9 @@ plot(gam.Condom, residuals = T)
 
 predict.gam(gam.Condom, type = "response")
 
-# adjusting for age and number of partners
+# adjusting for participant age 
 
-gam.Condom.adj <- bam(Condom.frequency ~ s(Age.difference, bs="cr", k = 10) + s(Participant.age, bs="cr", k = 10)+ s(No.partners, bs="cr", k = 10) + s(Uid, bs="re"), # penalized cubic regression splines
+gam.Condom.adj <- bam(Condom.frequency ~ s(Age.difference, bs="cr", k = 10) + s(Participant.age, bs="cr", k = 10) + s(Uid, bs="re"), # penalized cubic regression splines
                       data = DT.reldata.men.gamm,
                       family = ocat(R = 3),
                       method = "fREML", #fREML is much faster and yields similar results like RELM
