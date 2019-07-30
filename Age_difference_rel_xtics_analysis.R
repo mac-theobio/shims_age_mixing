@@ -987,7 +987,7 @@ DT.coxdata.men <- DT.Agemix.men %>%
             End.rel.date,
             Timedifference = interval(Start.rel.date,EnrollmentDate)  %/% months(1),
             No.partners,
-            Partner.type = factor(Partner.type, levels = partlevels),
+            Partner.type = factor(Partner.type, levels = partlevels, labels = c("spouse", "regular", "casual"), ordered = T ),
             Participant.age = Participant.age + 12,
             Age.difference = round(Age.difference,6),
             Relationship.dur,
@@ -1199,8 +1199,7 @@ reldur.1 <- Predicted.survivor %>%
   ggplot(aes(x = time, 
              y = value)) +
   geom_line(aes(color = strata, linetype = var), size = 1.25) + 
-  scale_color_manual(name = "Partner type", values = mycols3,
-                     labels = c("casual","spouse","regular")) +
+  scale_color_manual(name = "Partner type", values = rev(mycols3), guide = guide_legend(reverse=TRUE)) +
   scale_linetype_manual(name = "Partner age difference",
                         values = c("solid","dashed","dotted","longdash", "dotdash"),
                         labels = c("4yrs younger", 
@@ -1215,10 +1214,6 @@ reldur.1 <- Predicted.survivor %>%
   theme(text=element_text(size=19),
         legend.key.width = unit(4,"line"))
 reldur.1
-
-cox.leg.M1 <- get_legend(reldur.1)
-ggplotify::as.ggplot(cox.leg.M1)
-# ggsave("coxlegM1.png", width = 3.19, height = 3.35,dpi = 600)
 
 
 reldur.1 + theme(legend.position = "none")
@@ -1281,8 +1276,7 @@ reldur.2 <- Predicted.survivor.2 %>%
   ggplot(aes(x = time, 
              y = value)) +
   geom_line(aes(color = strata, linetype = var), size = 1.25) +
-  scale_color_manual(name = "Partner type", values = mycols3,
-                     labels = c("casual","spouse","regular")) +
+  scale_color_manual(name = "Partner type", values = rev(mycols3), guide = guide_legend(reverse=TRUE)) +
   scale_linetype_manual(name = "Partner age difference",
                         values = c("solid","dashed","dotted","longdash", "dotdash"),
                         labels = c("4yrs younger", 
@@ -1297,6 +1291,10 @@ reldur.2 <- Predicted.survivor.2 %>%
   theme(text=element_text(size=19),
         legend.key.width = unit(4,"line"))
 reldur.2
+
+cox.leg <- get_legend(reldur.2)
+ggplotify::as.ggplot(cox.leg)
+# ggsave("coxleg.png", width = 3.19, height = 3.35,dpi = 600)
 
 reldur.2 + theme(legend.position = "none")
 # ggsave("survivalcurvesM2.png", width = 5.25, height = 4.35,dpi = 600)
