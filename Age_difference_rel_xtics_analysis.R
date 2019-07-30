@@ -1525,7 +1525,7 @@ gam.Sex
 
 # adjusting for number of partners
 
-gam.Sex.adj <- bam(Sex.frequency ~ s(Age.difference, bs="cr", k = 10) + s(Participant.age, bs="cr", k = 10) + s(No.partners, bs="cr", k = 10) + s(Uid, bs="re"), # penalized cubic regression splines
+gam.Sex.adj <- bam(Sex.frequency ~ s(Age.difference, bs="cr", k = 10) + s(Participant.age, bs="cr", k = 10) + s(Uid, bs="re"), # penalized cubic regression splines
                    data = DT.sexdata.men.gamm,
                    family = ocat(R = 4),
                    method = "fREML", #fREML is much faster and yields similar results like RELM
@@ -1562,7 +1562,7 @@ gam.Partner
 
 # adjusting for number of partners
 
-gam.Partner.adj <- bam(Partner.type ~ s(Age.difference, bs="cr", k = 10) + s(Participant.age, bs="cr", k = 10) + s(No.partners, bs="cr", k = 10) + s(Uid, bs="re"), # penalized cubic regression splines
+gam.Partner.adj <- bam(Partner.type ~ s(Age.difference, bs="cr", k = 10) + s(Participant.age, bs="cr", k = 10) + s(Uid, bs="re"), # penalized cubic regression splines
                        data = DT.partnerdata.men.gamm,
                        family = ocat(R = 3),
                        method = "fREML", #fREML is much faster and yields similar results like RELM
@@ -1582,7 +1582,7 @@ gam.cox <- gam(Relationship.dur ~ s(Age.difference, bs="cr", k = 10) + s(Uid, bs
                nthreads = 4)
 summary(gam.cox)
 
-gam.cox.adj <- gam(Relationship.dur ~ s(Age.difference, bs="cr", k = 10) + s(Participant.age, bs="cr", k = 10) + s(No.partners, bs="cr", k = 10),
+gam.cox.adj <- gam(Relationship.dur ~ s(Age.difference, bs="cr", k = 10) + s(Participant.age, bs="cr", k = 10),
                family = cox.ph(),
                data = DT.coxdata.men,
                weights = Rel.dissolved,
