@@ -500,11 +500,11 @@ Agemix.plot <- ggplot(DT.Agemix.men,aes(Participant.age,Partner.age)) +
         axis.text.y = element_text(size=11), legend.position = "right") +
   theme(text=element_text(size=11)) + 
   geom_abline(aes(intercept = fixef(agemix.M5)[["(Intercept)"]],slope = fixef(agemix.M5)[["Participant.age"]],color = "Population average"), size = 1.25) +
-  geom_abline(aes(intercept = 12,slope =1, color = "Same age"), size = 1.25) +
+  geom_abline(aes(intercept = 12,slope =1, color = "X=Y reference line"), size = 1.25) +
   geom_line(data = confint, aes(x=participant.age-12, y=lci), size = 1,linetype = "dashed", color="orangered2") +
   geom_line(data = confint, aes(x=participant.age-12, y=uci), size = 1,linetype = "dashed", color="orangered2") +
   scale_colour_manual(name= element_blank(),
-                      values=c("Population average" = "orangered2", "Same age" ="#0288d1")) 
+                      values=c("Population average" = "orangered2", "X=Y reference line" ="#0288d1")) 
 
 Agemix.plot
 
@@ -514,23 +514,23 @@ Agemix.plot
 ######
 # To display full data (including participants who were less than 12 years) and model fit
 
-
-Agemix.plot2 <- ggplot(DT.Agemix.men.2,aes(Participant.age,Partner.age)) +
-  geom_jitter(aes(color = Participant.age.more.15),size=3, width = 0.25, height = 0.25, alpha = 0.5, show.legend = T) +
-  xlab("Participant's age at relationship formation") +
-  ylab("Partner's age at relationship formation") + 
-  scale_x_continuous(labels = function(x)x+12, breaks = scales::pretty_breaks(n = 10), expand = c(0,0),limits = c(-15,35)) +
-  scale_y_continuous(breaks = scales::pretty_breaks(n = 10),expand = c(0,0), limits = c(0,45)) +
-  coord_fixed()+ 
-  theme(axis.text.x = element_text(size=12),panel.grid.minor = element_blank(),
-        axis.text.y = element_text(size=12)) +
-  theme(text=element_text( size=12)) + 
-  geom_abline(aes(intercept = fixef(agemix.M5)[["(Intercept)"]],slope = fixef(agemix.M5)[["Participant.age"]],color = "Population average"), color = "orangered2", size = 1.25) +
-  geom_abline(aes(intercept = 12,slope =1,color = "Same age"), color = "#0288d1", size = 1.25) +
-  geom_line(data = confint, aes(x=participant.age-12, y=lci), size = 1,linetype = "dashed", color="orangered2") +
-  geom_line(data = confint, aes(x=participant.age-12, y=uci), size = 1,linetype = "dashed", color="orangered2") +
-  scale_colour_manual("Participant age", labels = c("Less than 12 years", "12 years or more"),
-                      values=c("green","black"))
-Agemix.plot2
+# 
+# Agemix.plot2 <- ggplot(DT.Agemix.men.2,aes(Participant.age,Partner.age)) +
+#   geom_jitter(aes(color = Participant.age.more.15),size=3, width = 0.25, height = 0.25, alpha = 0.5, show.legend = T) +
+#   xlab("Participant's age at relationship formation") +
+#   ylab("Partner's age at relationship formation") + 
+#   scale_x_continuous(labels = function(x)x+12, breaks = scales::pretty_breaks(n = 10), expand = c(0,0),limits = c(-15,35)) +
+#   scale_y_continuous(breaks = scales::pretty_breaks(n = 10),expand = c(0,0), limits = c(0,45)) +
+#   coord_fixed()+ 
+#   theme(axis.text.x = element_text(size=12),panel.grid.minor = element_blank(),
+#         axis.text.y = element_text(size=12)) +
+#   theme(text=element_text( size=12)) + 
+#   geom_abline(aes(intercept = fixef(agemix.M5)[["(Intercept)"]],slope = fixef(agemix.M5)[["Participant.age"]],color = "Population average"), color = "orangered2", size = 1.25) +
+#   geom_abline(aes(intercept = 12,slope =1,color = "Same age"), color = "#0288d1", size = 1.25) +
+#   geom_line(data = confint, aes(x=participant.age-12, y=lci), size = 1,linetype = "dashed", color="orangered2") +
+#   geom_line(data = confint, aes(x=participant.age-12, y=uci), size = 1,linetype = "dashed", color="orangered2") +
+#   scale_colour_manual("Participant age", labels = c("Less than 12 years", "12 years or more"),
+#                       values=c("green","black"))
+# Agemix.plot2
 
 

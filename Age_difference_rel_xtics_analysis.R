@@ -287,8 +287,8 @@ Effects.condom.M3a <- Effect("Age.difference", condom.M3,
            ordered(levels = freqlevels))%>%
   spread(fit, value)
 
-Effects.condom.M3a.line.plot <- ggplot(Effects.condom.M3a, aes(x = Age.difference, y=prob, col = cond)) + 
-                                        geom_line(size = 1.25) + 
+Effects.condom.M3a.line.plot <- ggplot(Effects.condom.M3a, aes(x = Age.difference, y=prob, col = cond, linetype = cond)) + 
+                                        geom_line(size = 1) + 
                                         geom_ribbon(aes(ymin = L, ymax = U, fill = cond), alpha = 0.3, linetype = "blank") +
                                         xlab("Partner age difference") +
                                         ylab("Condom use (probability)") +
@@ -299,7 +299,11 @@ Effects.condom.M3a.line.plot <- ggplot(Effects.condom.M3a, aes(x = Age.differenc
                                               legend.position = "bottom") +
                                         scale_color_manual("", 
                                                            values = c(mycols3))+
-                                        scale_fill_manual("", values = c(mycols3))
+                                        scale_fill_manual("", values = c(mycols3))+
+  scale_linetype_manual("",values = c("dotdash","longdash","solid"))+
+  theme(legend.key.size = unit(1,"cm"))
+  
+  #guides(line = guide_legend(override.aes = list(keywidth = 2)))
 
 
 Effects.condom.M3a.line.plot + Rug.plot.condom + theme(legend.position = "none") 
@@ -307,7 +311,7 @@ Effects.condom.M3a.line.plot + Rug.plot.condom + theme(legend.position = "none")
 
 leg <- get_legend(Effects.condom.M3a.line.plot)
 ggplotify::as.ggplot(leg)
-# ggsave("Condomuse3bleg.png", width = 3.25, height = 0.4,dpi = 600)
+# ggsave("Condomuse3bleg.png", width = 4.00, height = 0.4,dpi = 600)
 
 
 # (ii) Age of participant effect
@@ -601,8 +605,8 @@ Effects.sex.M3a <- Effect("Age.difference", sex.M3,
                            to = sexlevels)) %>% 
   spread(fit, value) 
 
-Effects.sex.M3.line.plot <- ggplot(Effects.sex.M3a, aes(x = Age.difference, y=prob, col = cond)) + 
-  geom_line(size = 1.25) + 
+Effects.sex.M3.line.plot <- ggplot(Effects.sex.M3a, aes(x = Age.difference, y=prob, col = cond, linetype = cond)) + 
+  geom_line(size = 1) + 
   geom_ribbon(aes(ymin = L, ymax = U, fill = cond), alpha = 0.3, linetype = "blank") +
   xlab("Partner age difference") +
   ylab("Sex frequency (probability)") +
@@ -613,14 +617,15 @@ Effects.sex.M3.line.plot <- ggplot(Effects.sex.M3a, aes(x = Age.difference, y=pr
         legend.position = "bottom") +
   scale_color_manual(name = "", 
                      values = c(mycols4))+
-  scale_fill_manual("", values = c(mycols4))
+  scale_fill_manual("", values = c(mycols4))+
+  scale_linetype_manual("",values = c("dotted","dotdash","longdash","solid"))
 
 leg2 <- get_legend(Effects.sex.M3.line.plot)
 ggplotify::as.ggplot(leg2)
-# ggsave("Sexfreqleg.png", width = 5.75, height = 0.5,dpi = 600)
+# ggsave("Sexfreqleg.png", width = 6, height = 0.5,dpi = 600)
 
 
-Effects.sex.M3.line.plot + theme(legend.position = "none") + Rug.plot.sex
+Effects.sex.M3.line.plot + Rug.plot.sex + theme(legend.position = "none") 
 # ggsave("SexfreqM3.png", width = 5.25, height = 4.25,dpi = 600)
 
 
@@ -921,8 +926,8 @@ Effects.partner.M3a <- Effect("Age.difference", partner.M3,
                            to = c("spouse","regular","casual"))) %>% 
   spread(fit, value) 
 
-Effects.partner.M3a.line.plot <- ggplot(Effects.partner.M3a, aes(x = Age.difference, y=prob, col = cond)) + 
-  geom_line(size = 1.25) + 
+Effects.partner.M3a.line.plot <- ggplot(Effects.partner.M3a, aes(x = Age.difference, y=prob, col = cond, linetype = cond)) + 
+  geom_line(size = 1) + 
   geom_ribbon(aes(ymin = L, ymax = U, fill = cond), alpha = 0.3, linetype = "blank") +
   #ylim(0.1,0.7) +
   xlab("Partner age difference") +
@@ -934,13 +939,14 @@ Effects.partner.M3a.line.plot <- ggplot(Effects.partner.M3a, aes(x = Age.differe
         legend.position = "bottom") +
   scale_color_manual(name = "", 
                      values = c(mycols3))+
-  scale_fill_manual("", values = c(mycols3))
+  scale_fill_manual("", values = c(mycols3))+
+  scale_linetype_manual("",values = c("dotdash","longdash","solid"))
 
 legpart <- get_legend(Effects.partner.M3a.line.plot)
 ggplotify::as.ggplot(legpart)
-# ggsave("Partnertypeleg.png", width = 3.25, height = 0.25,dpi = 600)
+# ggsave("Partnertypeleg.png", width = 4, height = 0.25,dpi = 600)
 
-Effects.partner.M3a.line.plot + theme(legend.position = "none") + Rug.plot.part
+Effects.partner.M3a.line.plot + Rug.plot.part + theme(legend.position = "none") 
 # ggsave("PartnertypeM3a.png", width = 5.25, height = 4.25,dpi = 600)
 
 
@@ -1225,6 +1231,8 @@ reldur.1 + theme(legend.position = "none")
 # Examinig the distribution of survival times (adjusted survival curve-adjusted for age difference)
 plot(survfit(Reldurmod.cluster.M1), ylim =c(0,1), xlab = "Years", ylab = "Survival probability", main = "Survival Curve")
 
+
+# ** Adjusted model ------------------------------------------------------
 Reldurmod.cluster.M2 <- coxph(Surv(Relationship.dur, Rel.dissolved) ~ ns(Age.difference,1) + ns(Participant.age, df=3) +  cluster(Uid) + strata(Partner.type), 
                       data = DT.coxdata.men)
 
@@ -1275,7 +1283,7 @@ Predicted.survivor.2 <- survfit(Reldurmod.cluster.M2, newdata = new.df.2, data =
 reldur.2 <- Predicted.survivor.2 %>% 
   ggplot(aes(x = time, 
              y = value)) +
-  geom_line(aes(color = strata, linetype = var), size = 1.25) +
+  geom_line(aes(color = strata, linetype = var), size = 1) +
   scale_color_manual(name = "Partner type", values = rev(mycols3), guide = guide_legend(reverse=TRUE)) +
   scale_linetype_manual(name = "Partner age difference",
                         values = c("solid","dashed","dotted","longdash", "dotdash"),
@@ -1289,7 +1297,7 @@ reldur.2 <- Predicted.survivor.2 %>%
   theme(axis.text.x = element_text(size=19),
         axis.text.y = element_text(size=19))+
   theme(text=element_text(size=19),
-        legend.key.width = unit(4,"line"))
+        legend.key.width = unit(3,"line"))
 reldur.2
 
 cox.leg <- get_legend(reldur.2)
